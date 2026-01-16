@@ -8,7 +8,6 @@ import (
 )
 
 func meni() {
-	// isprobavanje
 	fmt.Println("===== Count-Min Sketch =====")
 	fmt.Println()
 	fmt.Println("1 - Kreirajte novu instancu")
