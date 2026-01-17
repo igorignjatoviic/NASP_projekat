@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func meniCountMinSketch() {
+func meni() {
 	fmt.Println("===== Count-Min Sketch =====")
 	fmt.Println()
 	fmt.Println("1 - Kreirajte novu instancu")
@@ -71,7 +71,7 @@ func kreirajCountMinSketch() {
 	fmt.Println()
 	fmt.Printf("Uspesno ste kreirali Count-Min Sketch objekat pod imenom '%s'.\n", ime)
 
-	meniCountMinSketch()
+	meni()
 }
 
 func izbrisiCountMinSketch() {
@@ -85,7 +85,7 @@ func izbrisiCountMinSketch() {
 	fmt.Println()
 	fmt.Printf("Uspesno ste izbrisali Count-Min Sketch objekat pod nazivom '%s'.\n", ime)
 
-	meniCountMinSketch()
+	meni()
 }
 
 func dodavanjeDogadjaja() {
@@ -122,7 +122,7 @@ func dodavanjeDogadjaja() {
 	fmt.Println()
 	fmt.Printf("Podaci su uspesno uneti u Count-Min Sketch pod imenom '%s'.\n", ime)
 
-	meniCountMinSketch()
+	meni()
 }
 
 func proveraUcestalostiDogadjaja() {
@@ -142,7 +142,7 @@ func proveraUcestalostiDogadjaja() {
 	fmt.Printf("Minimalan broj ponavljanja podatka '%s' u Count-Min Sketchu '%s': %d.\n", podatak, ime, rezultat)
 	fmt.Scanln()
 
-	meniCountMinSketch()
+	meni()
 }
 
 func izlazakIzAplikacije() {
@@ -278,5 +278,5 @@ func errorPoruka() {
 }
 
 func main() {
-	meniCountMinSketch()
+	meni()
 }
