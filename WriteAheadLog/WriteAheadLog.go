@@ -3,30 +3,64 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
 	"time"
 )
 
+// napraviti da sistem sam bira segment iz segmenti.txt i upis writeaheadloga
 type WriteAheadLog struct {
-	blok   []byte
-	logovi []string
+	blok     []byte
+	segmenti []string
 }
 
 func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
+	wal.izracunajTimestamp()
+	wal.izracunajTombstone(dogadjaj)
+	wal.izracunajDuzinuParametra(kljuc)
+	wal.izracunajDuzinuParametra(vrednost)
+	wal.izracunajCRC()
+
+	wal.sacuvajBlok()
+}
+
+func (wal *WriteAheadLog) izracunajCRC() {
+	bafer := make([]byte, 4)
+	binary.BigEndian.PutUint32(bafer, CRC32(wal.blok))
+	wal.blok = append(bafer, wal.blok...)
+}
+
+func (wal *WriteAheadLog) izracunajTimestamp() {
 	timestamp := time.Now().Unix()
-	buffer := make([]byte, 8)
-	binary.BigEndian.PutUint64(buffer, uint64(timestamp))
+	bafer := make([]byte, 8)
+	binary.BigEndian.PutUint64(bafer, uint64(timestamp))
+	wal.blok = append(wal.blok, bafer...)
+}
 
-	buffer2 := make([]byte, 1)
-	buffer2[0] = 0
+func (wal *WriteAheadLog) izracunajTombstone(dogadjaj string) {
 	if dogadjaj == "delete" {
-		buffer2[0] = 1
+		wal.blok = append(wal.blok, byte(1))
+	} else {
+		wal.blok = append(wal.blok, byte(0))
 	}
+}
 
-	duzinaKljuca := len(kljuc)
-	buffer3 := make([]byte, 8)
-	binary.BigEndian.PutUint64(buffer3, uint64(duzinaKljuca))
+func (wal *WriteAheadLog) izracunajDuzinuParametra(parametar string) {
+	duzina := len(parametar)
+	bafer := make([]byte, 8)
+	bafer[0] = byte(duzina)
+	copy(bafer[1:len(parametar)+1], []byte(parametar))
+	wal.blok = append(wal.blok, bafer...)
+}
 
-	wal.blok = append(wal.blok, buffer3...)
+func (wal *WriteAheadLog) sacuvajBlok() {
+	wal.ucitajSegmente()
+}
 
-	fmt.Print(wal.blok)
+func (wal *WriteAheadLog) ucitajSegmente() {
+	podaci, err := os.ReadFile("resources/segmenti.txt")
+	if err != nil {
+		fmt.Printf("Fajl nepostoji.")
+		return
+	}
+	fmt.Println(string(podaci))
 }

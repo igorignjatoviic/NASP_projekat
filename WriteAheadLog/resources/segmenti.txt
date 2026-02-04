@@ -1,0 +1,2 @@
+ime_segmenta,popunjen
+wal1, 0
