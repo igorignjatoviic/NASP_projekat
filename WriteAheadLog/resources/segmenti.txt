@@ -1,2 +1,2 @@
-ime_segmenta,broj_zapisa,popunjen
-wal1,0,0
+ime_segmenta,popunjena_memorija,popunjen,perzistentan
+wal1,0,0,0

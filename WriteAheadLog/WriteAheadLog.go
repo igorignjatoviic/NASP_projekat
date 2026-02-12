@@ -4,22 +4,24 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// napraviti da sistem sam bira segment iz segmenti.txt i upis writeaheadloga
-// proveriti da li je upis dobar pomocu citanja i zatim napraviti bolji odabir walova, upis u fajl da je zapis promenjen itd
+// testirati sistem za biranje segmenata i modifikovanje segment.txt prilikom upisa zapisa
 type WriteAheadLog struct {
 	blok                 []byte
 	segmenti             []string
 	maksimalanBrojZapisa int
+	padding              int
 }
 
 func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
-	wal.maksimalanBrojZapisa = 10
+	wal.maksimalanBrojZapisa = 200
+	wal.padding = 50
 
 	wal.izracunajTimestamp()
 	wal.izracunajTombstone(dogadjaj)
@@ -67,8 +69,11 @@ func (wal *WriteAheadLog) konvertujParametarUBajtove(parametar string) {
 }
 
 func (wal *WriteAheadLog) sacuvajBlok() error {
-	segment := wal.ucitajSegmente()
-	fajl, err := os.Create(segment)
+	segment, err := wal.ucitajSegment()
+	if err != nil {
+		log.Fatal("Greska.")
+	}
+	fajl, err := os.Open(segment)
 	if err != nil {
 		return err
 	}
@@ -83,10 +88,11 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 	return nil
 }
 
-func (wal *WriteAheadLog) ucitajSegmente() string {
+func (wal *WriteAheadLog) ucitajSegment() (string, error) {
+	lokacija := ""
 	fajl, err := os.Open("resources/segmenti.txt")
 	if err != nil {
-		fmt.Println("Greska pri otvaranju fajla.")
+		return lokacija, err
 	}
 	defer fajl.Close()
 
@@ -94,17 +100,58 @@ func (wal *WriteAheadLog) ucitajSegmente() string {
 	skener.Scan()
 
 	for skener.Scan() {
-		line := skener.Text()
-		podaci := strings.Split(line, ",")
-		brojZapisa, err := strconv.Atoi(podaci[1])
+		linija := skener.Text()
+		podaci := strings.Split(linija, ",")
+
+		popunjen, err := strconv.Atoi(podaci[2])
 		if err != nil {
-			fmt.Println("Greska u parsiranju.")
+			return lokacija, err
 		}
 
-		if brojZapisa < wal.maksimalanBrojZapisa {
-			return "resources/" + podaci[0] + ".bin"
+		popunjenaMemorija, err := strconv.Atoi(podaci[1])
+		if err != nil {
+			return lokacija, err
+		}
+		if wal.maksimalanBrojZapisa-popunjenaMemorija < wal.padding {
+			fmt.Println("Preostalo je premalo memorije u vasem walu.")
+		} else if popunjen == 0 {
+			lokacija = "resources/" + podaci[0] + ".bin"
 		}
 	}
 
-	return ""
+	if lokacija == "" {
+		wal.kreirajSegment()
+	}
+
+	return lokacija, nil
+}
+
+func (wal *WriteAheadLog) kreirajSegment() {
+	fajl, err := os.ReadFile("resources/segmenti.txt")
+	if err != nil {
+		errorFajl()
+	}
+	linije := strings.Split(string(fajl), "\n")
+	noviWAL := "wal" + strconv.Itoa(len(linije)-1) + ",0,0,0"
+	linije = append(linije, noviWAL)
+
+	noviFajl, err := os.Create("resources/segmenti.txt")
+	if err != nil {
+		errorFajl()
+	}
+	defer noviFajl.Close()
+
+	for i := range len(linije) {
+		noviFajl.WriteString(linije[i])
+	}
+	noviFajl.WriteString("\n")
+	fmt.Println("gotovo")
+}
+
+func errorParsiranje() {
+	log.Fatal("Greska prilikom parsiranja.")
+}
+
+func errorFajl() {
+	log.Fatal("Greska pri otvaranju fajla.")
 }
