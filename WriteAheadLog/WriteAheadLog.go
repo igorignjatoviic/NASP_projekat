@@ -102,6 +102,7 @@ func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 
 	for skener.Scan() {
 		linija := skener.Text()
+		fmt.Println(linija)
 		podaci := strings.Split(linija, ",")
 
 		popunjen, err := strconv.Atoi(podaci[2])
@@ -113,14 +114,15 @@ func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 		if err != nil {
 			return lokacija, err
 		}
-		if wal.maksimalanBrojZapisa-popunjenaMemorija < wal.padding {
+		if wal.maksimalanBrojZapisa-popunjenaMemorija <= wal.padding {
 			fmt.Println("Preostalo je premalo memorije u vasem walu.")
 		} else if popunjen == 0 {
 			lokacija = "resources/" + podaci[0] + ".bin"
+			fmt.Println("PRONASAO")
 			break
 		}
 	}
-
+	fmt.Println("Lokacija:" + lokacija)
 	if lokacija == "" {
 		lokacija = "resources/" + wal.kreirajSegment() + ".bin"
 		_, err := os.Create(lokacija)
