@@ -1,0 +1,65 @@
+func (wal *WriteAheadLog) ucitajSegment() (string, error) {
+	lokacija := ""
+	fajl, err := os.Open("resources/segmenti.txt")
+	if err != nil {
+		return lokacija, err
+	}
+	defer fajl.Close()
+
+	skener := bufio.NewScanner(fajl)
+	skener.Scan()
+
+	for skener.Scan() {
+		linija := skener.Text()
+		podaci := strings.Split(linija, ",")
+
+		popunjen, err := strconv.Atoi(podaci[2])
+		if err != nil {
+			return lokacija, err
+		}
+
+		popunjenaMemorija, err := strconv.Atoi(podaci[1])
+		if err != nil {
+			return lokacija, err
+		}
+		if wal.maksimalanBrojZapisa-popunjenaMemorija < wal.padding {
+			fmt.Println("Preostalo je premalo memorije u vasem walu.")
+		} else if popunjen == 0 {
+			lokacija = "resources/" + podaci[0] + ".bin"
+			break
+		}
+	}
+
+	if lokacija == "" {
+		lokacija = "resources/" + wal.kreirajSegment() + ".bin"
+		_, err := os.Create(lokacija)
+		if err != nil {
+			errorFajl()
+		}
+	}
+
+	return lokacija, nil
+}
+
+func (wal *WriteAheadLog) kreirajSegment() string {
+	fajl, err := os.ReadFile("resources/segmenti.txt")
+	if err != nil {
+		errorFajl()
+	}
+	linije := strings.Split(string(fajl), "\n")
+	noviWAL := "wal" + strconv.Itoa(len(linije)-1) + ",0,0,0"
+	linije = append(linije, noviWAL)
+
+	noviFajl, err := os.Create("resources/segmenti.txt")
+	if err != nil {
+		errorFajl()
+	}
+	defer noviFajl.Close()
+
+	for i := range len(linije) {
+		noviFajl.WriteString(linije[i])
+	}
+	noviFajl.WriteString("\n")
+
+	return "wal" + strconv.Itoa((len(linije) - 2))
+}

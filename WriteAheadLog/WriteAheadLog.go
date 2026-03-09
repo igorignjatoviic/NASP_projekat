@@ -12,6 +12,7 @@ import (
 )
 
 // testirati sistem za biranje segmenata i modifikovanje segment.txt prilikom upisa zapisa
+// ispraviti sistem za biranje segmenata, lose kreiranje novih
 type WriteAheadLog struct {
 	blok                 []byte
 	segmenti             []string
@@ -32,6 +33,7 @@ func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
 	wal.izracunajCRC()
 
 	wal.sacuvajBlok()
+	fmt.Println("upisano")
 }
 
 func (wal *WriteAheadLog) izracunajCRC() {
@@ -82,7 +84,6 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 	if err := binary.Write(fajl, binary.BigEndian, wal.blok); err != nil {
 		return err
 	}
-	fmt.Println("upisano")
 
 	wal.blok = []byte{}
 	return nil
@@ -116,17 +117,23 @@ func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 			fmt.Println("Preostalo je premalo memorije u vasem walu.")
 		} else if popunjen == 0 {
 			lokacija = "resources/" + podaci[0] + ".bin"
+			break
 		}
 	}
 
 	if lokacija == "" {
-		wal.kreirajSegment()
+		lokacija = "resources/" + wal.kreirajSegment() + ".bin"
+		_, err := os.Create(lokacija)
+		if err != nil {
+			errorFajl()
+		}
+		fmt.Println("Novalokacija:" + lokacija)
 	}
 
 	return lokacija, nil
 }
 
-func (wal *WriteAheadLog) kreirajSegment() {
+func (wal *WriteAheadLog) kreirajSegment() string {
 	fajl, err := os.ReadFile("resources/segmenti.txt")
 	if err != nil {
 		errorFajl()
@@ -145,7 +152,19 @@ func (wal *WriteAheadLog) kreirajSegment() {
 		noviFajl.WriteString(linije[i])
 	}
 	noviFajl.WriteString("\n")
-	fmt.Println("gotovo")
+
+	return "wal" + strconv.Itoa((len(linije) - 2))
+}
+
+func (wal *WriteAheadLog) izmeniSegment() {
+	fajl, err := os.ReadFile("resources/segmenti.txt")
+	if err != nil {
+		errorFajl()
+	}
+	linije := strings.Split(string(fajl), "\n")
+	izmenjenWal := "wal" + strconv.Itoa(len(linije))
+	fmt.Println(izmenjenWal)
+
 }
 
 func errorParsiranje() {
