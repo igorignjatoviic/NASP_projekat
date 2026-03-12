@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// testirati sistem za biranje segmenata i modifikovanje segment.txt prilikom upisa zapisa
-// ispraviti sistem za biranje segmenata, lose kreiranje novih
+// implementirati citanje segmenata, ulepsati i testirati sve do sada
 type WriteAheadLog struct {
 	blok               []byte
 	segmenti           []string
@@ -71,11 +71,12 @@ func (wal *WriteAheadLog) konvertujParametarUBajtove(parametar string) {
 }
 
 func (wal *WriteAheadLog) sacuvajBlok() error {
-	segment, err := wal.ucitajSegment()
+	segment, ime, err := wal.ucitajSegment()
 	if err != nil {
 		log.Fatal("Greska.")
 	}
-	fajl, err := os.Open(segment)
+
+	fajl, err := os.OpenFile(segment, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -85,16 +86,21 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 		return err
 	}
 
+	_, err = wal.izmeniSegment(ime)
+	if err != nil {
+		errorFajl()
+	}
+
 	wal.blok = []byte{}
 	return nil
 }
 
-func (wal *WriteAheadLog) ucitajSegment() (string, error) {
+func (wal *WriteAheadLog) ucitajSegment() (string, string, error) {
 	lokacija := ""
 
 	fajl, err := os.Open("resources/segmenti.txt")
 	if err != nil {
-		errorFajl()
+		return "", "", err
 	}
 	defer fajl.Close()
 
@@ -109,20 +115,28 @@ func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 		ime := podaci[0]
 		popunjenaMemorija, err := strconv.Atoi(podaci[1])
 		if err != nil {
-			errorParsiranje()
+			return "", "", err
 		}
 		popunjen, err := strconv.Atoi(podaci[2])
 		if err != nil {
-			errorParsiranje()
+			return "", "", err
 		}
 
 		if wal.proveriSegment(popunjenaMemorija, popunjen) {
 			lokacija = "resources/" + ime + ".bin"
-			return lokacija, nil
+			return lokacija, ime, nil
 		}
 	}
 
-	return wal.kreirajSegment(), nil
+	lokacija, ime := wal.kreirajSegment()
+	fmt.Println(lokacija)
+	noviFajl, err := os.Create(lokacija)
+	if err != nil {
+		return "", "", err
+	}
+	defer noviFajl.Close()
+
+	return lokacija, ime, nil
 }
 
 func (wal *WriteAheadLog) proveriSegment(popunjenaMemorija int, popunjen int) bool {
@@ -138,7 +152,7 @@ func (wal *WriteAheadLog) proveriSegment(popunjenaMemorija int, popunjen int) bo
 	return true
 }
 
-func (wal *WriteAheadLog) kreirajSegment() string {
+func (wal *WriteAheadLog) kreirajSegment() (string, string) {
 	fajl, err := os.ReadFile("resources/segmenti.txt")
 	if err != nil {
 		errorFajl()
@@ -147,6 +161,8 @@ func (wal *WriteAheadLog) kreirajSegment() string {
 	linije := strings.Split(string(fajl), "\n")
 	noviWAL := "wal" + strconv.Itoa(len(linije)-1) + ",0,0,0"
 	linije[len(linije)-1] = noviWAL
+
+	ime := strings.Split(noviWAL, ",")[0]
 
 	fajlUpis, err := os.Create("resources/segmenti.txt")
 	if err != nil {
@@ -158,18 +174,55 @@ func (wal *WriteAheadLog) kreirajSegment() string {
 		fajlUpis.WriteString(linija + "\n")
 	}
 
-	return "resources/" + strconv.Itoa(len(linije)-1) + ".bin"
+	return "resources/wal" + strconv.Itoa(len(linije)-1) + ".bin", ime
 }
 
-func (wal *WriteAheadLog) izmeniSegment() {
+func (wal *WriteAheadLog) izmeniSegment(ime string) (bool, error) {
 	fajl, err := os.ReadFile("resources/segmenti.txt")
 	if err != nil {
-		errorFajl()
+		return false, err
 	}
-	linije := strings.Split(string(fajl), "\n")
-	izmenjenWal := "wal" + strconv.Itoa(len(linije))
-	fmt.Println(izmenjenWal)
 
+	linije := strings.Split(string(fajl), "\n")
+	noveLinije := make([]string, len(linije))
+
+	for i, linija := range linije {
+		if strings.Contains(linija, ime) {
+			podaci := strings.Split(linija, ",")
+
+			popunjenaMemorija, err := strconv.Atoi(podaci[1])
+			if err != nil {
+				return false, err
+			}
+			popunjenaMemorija += len(wal.blok)
+
+			popunjen, err := strconv.Atoi(podaci[2])
+			if err != nil {
+				return false, err
+			}
+
+			if wal.maksimalnaMemorija-popunjenaMemorija <= wal.padding {
+				popunjen = 1
+			}
+
+			linija = ime + "," + strconv.Itoa(popunjenaMemorija) + "," + strconv.Itoa(popunjen) + ",0"
+		}
+
+		noveLinije[i] = linija
+	}
+	noveLinije = slices.Delete(noveLinije, len(noveLinije)-1, len(noveLinije))
+
+	noviFajl, err := os.Create("resources/segmenti.txt")
+	if err != nil {
+		return false, err
+	}
+	defer noviFajl.Close()
+
+	for _, linija := range noveLinije {
+		noviFajl.WriteString(linija + "\n")
+	}
+
+	return true, nil
 }
 
 func errorParsiranje() {
