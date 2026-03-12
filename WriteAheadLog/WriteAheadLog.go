@@ -14,14 +14,14 @@ import (
 // testirati sistem za biranje segmenata i modifikovanje segment.txt prilikom upisa zapisa
 // ispraviti sistem za biranje segmenata, lose kreiranje novih
 type WriteAheadLog struct {
-	blok                 []byte
-	segmenti             []string
-	maksimalanBrojZapisa int
-	padding              int
+	blok               []byte
+	segmenti           []string
+	maksimalnaMemorija int
+	padding            int
 }
 
 func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
-	wal.maksimalanBrojZapisa = 200
+	wal.maksimalnaMemorija = 200
 	wal.padding = 50
 
 	wal.izracunajTimestamp()
@@ -91,9 +91,10 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 
 func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 	lokacija := ""
+
 	fajl, err := os.Open("resources/segmenti.txt")
 	if err != nil {
-		return lokacija, err
+		errorFajl()
 	}
 	defer fajl.Close()
 
@@ -102,37 +103,39 @@ func (wal *WriteAheadLog) ucitajSegment() (string, error) {
 
 	for skener.Scan() {
 		linija := skener.Text()
-		fmt.Println(linija)
 		podaci := strings.Split(linija, ",")
+		fmt.Println(linija)
 
-		popunjen, err := strconv.Atoi(podaci[2])
-		if err != nil {
-			return lokacija, err
-		}
-
+		ime := podaci[0]
 		popunjenaMemorija, err := strconv.Atoi(podaci[1])
 		if err != nil {
-			return lokacija, err
+			errorParsiranje()
 		}
-		if wal.maksimalanBrojZapisa-popunjenaMemorija <= wal.padding {
-			fmt.Println("Preostalo je premalo memorije u vasem walu.")
-		} else if popunjen == 0 {
-			lokacija = "resources/" + podaci[0] + ".bin"
-			fmt.Println("PRONASAO")
-			break
-		}
-	}
-	fmt.Println("Lokacija:" + lokacija)
-	if lokacija == "" {
-		lokacija = "resources/" + wal.kreirajSegment() + ".bin"
-		_, err := os.Create(lokacija)
+		popunjen, err := strconv.Atoi(podaci[2])
 		if err != nil {
-			errorFajl()
+			errorParsiranje()
 		}
-		fmt.Println("Novalokacija:" + lokacija)
+
+		if wal.proveriSegment(popunjenaMemorija, popunjen) {
+			lokacija = "resources/" + ime + ".bin"
+			return lokacija, nil
+		}
 	}
 
-	return lokacija, nil
+	return wal.kreirajSegment(), nil
+}
+
+func (wal *WriteAheadLog) proveriSegment(popunjenaMemorija int, popunjen int) bool {
+	dostupnaMemorija := wal.maksimalnaMemorija - popunjenaMemorija
+
+	if dostupnaMemorija <= wal.padding {
+		fmt.Println("Preostalo je premalo memorije u vasem wal.")
+		return false
+	} else if popunjen == 1 {
+		return false
+	}
+
+	return true
 }
 
 func (wal *WriteAheadLog) kreirajSegment() string {
@@ -140,22 +143,22 @@ func (wal *WriteAheadLog) kreirajSegment() string {
 	if err != nil {
 		errorFajl()
 	}
+
 	linije := strings.Split(string(fajl), "\n")
 	noviWAL := "wal" + strconv.Itoa(len(linije)-1) + ",0,0,0"
-	linije = append(linije, noviWAL)
+	linije[len(linije)-1] = noviWAL
 
-	noviFajl, err := os.Create("resources/segmenti.txt")
+	fajlUpis, err := os.Create("resources/segmenti.txt")
 	if err != nil {
 		errorFajl()
 	}
-	defer noviFajl.Close()
+	defer fajlUpis.Close()
 
-	for i := range len(linije) {
-		noviFajl.WriteString(linije[i])
+	for _, linija := range linije {
+		fajlUpis.WriteString(linija + "\n")
 	}
-	noviFajl.WriteString("\n")
 
-	return "wal" + strconv.Itoa((len(linije) - 2))
+	return "resources/" + strconv.Itoa(len(linije)-1) + ".bin"
 }
 
 func (wal *WriteAheadLog) izmeniSegment() {
