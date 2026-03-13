@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"slices"
@@ -12,7 +13,6 @@ import (
 	"time"
 )
 
-// implementirati citanje segmenata, ulepsati i testirati sve do sada
 type WriteAheadLog struct {
 	blok               []byte
 	segmenti           []string
@@ -33,7 +33,6 @@ func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
 	wal.izracunajCRC()
 
 	wal.sacuvajBlok()
-	fmt.Println("upisano")
 }
 
 func (wal *WriteAheadLog) izracunajCRC() {
@@ -91,7 +90,9 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 		errorFajl()
 	}
 
+	fmt.Println("Upisano na lokaciji: ", segment)
 	wal.blok = []byte{}
+
 	return nil
 }
 
@@ -110,7 +111,6 @@ func (wal *WriteAheadLog) ucitajSegment() (string, string, error) {
 	for skener.Scan() {
 		linija := skener.Text()
 		podaci := strings.Split(linija, ",")
-		fmt.Println(linija)
 
 		ime := podaci[0]
 		popunjenaMemorija, err := strconv.Atoi(podaci[1])
@@ -129,7 +129,6 @@ func (wal *WriteAheadLog) ucitajSegment() (string, string, error) {
 	}
 
 	lokacija, ime := wal.kreirajSegment()
-	fmt.Println(lokacija)
 	noviFajl, err := os.Create(lokacija)
 	if err != nil {
 		return "", "", err
@@ -143,7 +142,6 @@ func (wal *WriteAheadLog) proveriSegment(popunjenaMemorija int, popunjen int) bo
 	dostupnaMemorija := wal.maksimalnaMemorija - popunjenaMemorija
 
 	if dostupnaMemorija <= wal.padding {
-		fmt.Println("Preostalo je premalo memorije u vasem wal.")
 		return false
 	} else if popunjen == 1 {
 		return false
@@ -223,6 +221,80 @@ func (wal *WriteAheadLog) izmeniSegment(ime string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (wal *WriteAheadLog) ucitajWriteAheadLog() {
+	fajlovi, err := os.ReadDir("resources")
+	if err != nil {
+		errorFajl()
+	}
+
+	segmenti := make([]string, 0)
+	for _, fajl := range fajlovi {
+		if strings.Contains(fajl.Name(), "wal") {
+			segmenti = append(segmenti, fajl.Name())
+		}
+	}
+
+	for _, segment := range segmenti {
+		fajl, err := os.Open("resources/" + segment)
+		if err != nil {
+			errorFajl()
+		}
+		defer fajl.Close()
+
+		fmt.Println("\nSegment: ", segment)
+		for {
+			wal.blok = []byte{}
+
+			var crc uint32
+			var timestamp uint64
+			var tombstone uint8
+			var keySize uint64
+			var valueSize uint64
+
+			err := binary.Read(fajl, binary.BigEndian, &crc)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				errorFajl()
+			}
+
+			binary.Read(fajl, binary.BigEndian, &timestamp)
+			binary.Read(fajl, binary.BigEndian, &tombstone)
+			binary.Read(fajl, binary.BigEndian, &keySize)
+			binary.Read(fajl, binary.BigEndian, &valueSize)
+
+			header := make([]byte, 8+1+8+8)
+			binary.BigEndian.PutUint64(header[0:8], timestamp)
+			header[8] = tombstone
+			binary.BigEndian.PutUint64(header[9:17], keySize)
+			binary.BigEndian.PutUint64(header[17:25], valueSize)
+
+			key := make([]byte, keySize)
+			value := make([]byte, valueSize)
+
+			binary.Read(fajl, binary.BigEndian, &key)
+			binary.Read(fajl, binary.BigEndian, &value)
+
+			wal.blok = append(wal.blok, header...)
+			wal.blok = append(wal.blok, key...)
+			wal.blok = append(wal.blok, value...)
+
+			noviCRC := CRC32(wal.blok)
+
+			dogadjaj := ""
+			if tombstone == 0 {
+				dogadjaj = "PUT"
+			} else {
+				dogadjaj = "DELETE"
+			}
+
+			fmt.Printf("\t%s(%s, %s)", dogadjaj, string(key), string(value))
+			fmt.Println("\tUpisani CRC: ", crc, ", Novi CRC: ", noviCRC)
+		}
+	}
 }
 
 func errorParsiranje() {
