@@ -7,16 +7,14 @@ import (
 	"os"
 )
 
-// dodati validaciju za vrednosti paddinga i segmenta
-// istraziti da li postoji jos neki parametar koji je potreban za validaciju
-// ulepsati ispise
+// dodati ostale strukture u konfiguraciju
 func meni() {
 	konfiguracija := ucitajKonfiguraciju()
 
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
 
-	fmt.Print("Unesite jednu od ponudjenih opcija: ")
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
 	opcija := unesiBroj()
 
 	switch opcija {
@@ -27,11 +25,11 @@ func meni() {
 
 func konfiguracijaWriteAheadLoga(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
 	ocistiProzor()
-	fmt.Println("===== Konfiguracija WriteAheadLog-a =====")
+	fmt.Print("===== Konfiguracija WriteAheadLog-a =====\n\n")
 	fmt.Println("1 - Trenutna konfiguracija")
 	fmt.Println("2 - Izmeni konfiguraciju")
 
-	fmt.Print("Unesite jednu od ponudjenih opcija: ")
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
 	opcija := unesiBroj()
 
 	switch opcija {
@@ -65,11 +63,11 @@ func trenutnaKonfiguracijaWriteAheadLoga(korenskaKonfig map[string]map[string]ui
 
 func izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
 	ocistiProzor()
-	fmt.Println("===== Izmena konfiguracije WriteAheadLog-a =====")
+	fmt.Print("===== Izmena konfiguracije WriteAheadLog-a =====\n\n")
 	fmt.Println("1 - Velicina segmenta")
 	fmt.Println("2 - Padding")
 
-	fmt.Print("Unesite jednu od ponudjenih opcija: ")
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
 	opcija := unesiBroj()
 
 	switch opcija {
