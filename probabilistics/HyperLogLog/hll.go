@@ -1,4 +1,4 @@
-package main
+package hll
 
 import (
 	"bufio"
@@ -143,7 +143,7 @@ func izlazak() {
 	}
 }
 
-func main() {
+func HyperLogLogMeni() {
 
 	for {
 		fmt.Println("\n--- HYPER LOG LOG ---")
@@ -168,7 +168,7 @@ func main() {
 		case 4:
 			izbrisiHLL()
 		case 0:
-			izlazak()
+			return
 		default:
 			fmt.Println("Pogresan unos! Probajte ponovo.")
 		}

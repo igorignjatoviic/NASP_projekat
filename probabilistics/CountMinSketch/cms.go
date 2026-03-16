@@ -1,4 +1,4 @@
-package main
+package cms
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func meni() {
+func CountMinSketchMeni() {
 	fmt.Println("===== Count-Min Sketch =====")
 	fmt.Println()
 	fmt.Println("1 - Kreirajte novu instancu")
@@ -17,7 +17,7 @@ func meni() {
 	fmt.Println("0 - Izlazak")
 
 	fmt.Print("Unesite jednu od ponudjenih opcija: ")
-	option := unesiBroj()
+	option := UnesiBroj()
 
 	switch option {
 	case 1:
@@ -29,7 +29,7 @@ func meni() {
 	case 4:
 		proveraUcestalostiDogadjaja()
 	case 0:
-		izlazakIzAplikacije()
+		return
 	default:
 		fmt.Println("Pogresan unos")
 	}
@@ -47,7 +47,7 @@ func kreirajCountMinSketch() {
 	var epsilon float32
 	for {
 		fmt.Print("Unesite vrednost parametra epsilon (izmedju 0 i 1): ")
-		epsilon = unesiBroj()
+		epsilon = UnesiBroj()
 		if 0 < epsilon && epsilon < 1 {
 			break
 		}
@@ -57,7 +57,7 @@ func kreirajCountMinSketch() {
 	var delta float32
 	for {
 		fmt.Print("Unesite vrednost parametra delta (izmedju 0 i 1): ")
-		delta = unesiBroj()
+		delta = UnesiBroj()
 		if 0 < delta && delta < 1 {
 			break
 		}
@@ -71,7 +71,7 @@ func kreirajCountMinSketch() {
 	fmt.Println()
 	fmt.Printf("Uspesno ste kreirali Count-Min Sketch objekat pod imenom '%s'.\n", ime)
 
-	meni()
+	CountMinSketchMeni()
 }
 
 func izbrisiCountMinSketch() {
@@ -85,7 +85,7 @@ func izbrisiCountMinSketch() {
 	fmt.Println()
 	fmt.Printf("Uspesno ste izbrisali Count-Min Sketch objekat pod nazivom '%s'.\n", ime)
 
-	meni()
+	CountMinSketchMeni()
 }
 
 func dodavanjeDogadjaja() {
@@ -101,7 +101,7 @@ func dodavanjeDogadjaja() {
 	}
 
 	fmt.Print("Unesite koliko elemenata zelite da unesete u CountMin-Sketch: ")
-	n := int(unesiBroj())
+	n := int(UnesiBroj())
 	podaci := make([]string, n)
 	for i := 0; i < n; i++ {
 		fmt.Printf("Unesite %d. podatak: ", i+1)
@@ -122,7 +122,7 @@ func dodavanjeDogadjaja() {
 	fmt.Println()
 	fmt.Printf("Podaci su uspesno uneti u Count-Min Sketch pod imenom '%s'.\n", ime)
 
-	meni()
+	CountMinSketchMeni()
 }
 
 func proveraUcestalostiDogadjaja() {
@@ -142,12 +142,13 @@ func proveraUcestalostiDogadjaja() {
 	fmt.Printf("Minimalan broj ponavljanja podatka '%s' u Count-Min Sketchu '%s': %d.\n", podatak, ime, rezultat)
 	fmt.Scanln()
 
-	meni()
+	CountMinSketchMeni()
 }
 
 func izlazakIzAplikacije() {
 	ocistiProzor()
 	fmt.Println("Izasli ste iz aplikacije.")
+
 	os.Exit(0)
 }
 
@@ -254,7 +255,7 @@ func unesiString() string {
 	}
 }
 
-func unesiBroj() float32 {
+func UnesiBroj() float32 {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		var option float32
@@ -275,8 +276,4 @@ func ocistiProzor() {
 
 func errorPoruka() {
 	fmt.Println("Pogresan unos, pokusajte ponovo.")
-}
-
-func main() {
-	meni()
 }

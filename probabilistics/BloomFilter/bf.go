@@ -1,4 +1,4 @@
-package main
+package bf
 
 import (
 	"bufio"
@@ -35,7 +35,7 @@ func unesiBroj(prompt string) int {
 	}
 }
 
-func main() {
+func BloomFilterMeni() {
 	const filename = "bloomfilter.dat"
 	seed := uint32(time.Now().Unix()) // moze nesto randomm!
 	bf := NewBloomFilter(1000, 0.01, seed)
@@ -78,7 +78,6 @@ func main() {
 				fmt.Println("Bloom Filter učitan iz", filename)
 			}
 		case 0:
-			fmt.Println("Izlaz")
 			return
 		default:
 			fmt.Println("Pogrešan unos, probajte ponovo.")

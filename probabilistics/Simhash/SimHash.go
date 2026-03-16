@@ -1,4 +1,4 @@
-package main
+package sh
 
 import (
 	"bufio"
@@ -102,7 +102,7 @@ func abs(x int) int {
 	return x
 }
 
-func main() {
+func SimHashMeni() { // ovo sam importovao kao meni, nisam siguran da li je potreban meni za ovo
 	f1, err := ucitaj("tekst1.txt")
 	if err != nil {
 		fmt.Println("Greksa pri otvaranju")
