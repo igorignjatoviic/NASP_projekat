@@ -223,7 +223,7 @@ func unesiteNazivCountMinSketcha(kopija bool) (string, string) {
 		fmt.Print("Unesite naziv Count-Min Sketcha: ")
 		ime = unesiString()
 		fmt.Scanln()
-		lokacija = "resources/" + ime + ".bin"
+		lokacija = "Probabilistics/CountMinSketch/resources/" + ime + ".bin"
 		if proveriPutanju(lokacija) && kopija {
 			errorPoruka()
 		} else {

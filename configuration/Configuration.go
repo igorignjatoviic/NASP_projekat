@@ -1,4 +1,4 @@
-package main
+package configuration
 
 import (
 	"bufio"
@@ -8,11 +8,12 @@ import (
 )
 
 // dodati ostale strukture u konfiguraciju
-func meni() {
+func KonfiguracijaMeni() {
 	konfiguracija := ucitajKonfiguraciju()
 
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
+	fmt.Println("0 - Nazad")
 
 	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
 	opcija := unesiBroj()
@@ -20,6 +21,8 @@ func meni() {
 	switch opcija {
 	case 1:
 		konfiguracijaWriteAheadLoga(konfiguracija)
+	case 0:
+		return
 	}
 }
 
@@ -116,7 +119,7 @@ func unesiBroj() float32 {
 func ucitajKonfiguraciju() map[string]map[string]uint64 {
 	konfiguracija := make(map[string]map[string]uint64)
 
-	podaci, err := os.ReadFile("resources/configuration_file.json")
+	podaci, err := os.ReadFile("Configuration/resources/configuration_file.json")
 	if err != nil {
 		errorFajl()
 	}
@@ -130,7 +133,7 @@ func ucitajKonfiguraciju() map[string]map[string]uint64 {
 }
 
 func upisiKonfiguraciju(podaci []byte) error {
-	err := os.WriteFile("resources/configuration_file.json", podaci, 0644)
+	err := os.WriteFile("Configuration/resources/configuration_file.json", podaci, 0644)
 	if err != nil {
 		return err
 	}
@@ -151,8 +154,4 @@ func errorKonverzija() {
 
 func errorFajl() {
 	fmt.Println("Greska prilikom otvaranja fajla.")
-}
-
-func main() {
-	meni()
 }

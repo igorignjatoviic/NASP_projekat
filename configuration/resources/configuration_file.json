@@ -1,6 +1,6 @@
 {
   "WriteAheadLog": {
-    "Padding": 30,
+    "Padding": 50,
     "Velicina segmenta": 33
   }
 }

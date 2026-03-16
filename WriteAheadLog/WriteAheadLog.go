@@ -1,4 +1,4 @@
-package main
+package wal
 
 import (
 	"bufio"
@@ -99,7 +99,7 @@ func (wal *WriteAheadLog) sacuvajBlok() error {
 func (wal *WriteAheadLog) ucitajSegment() (string, string, error) {
 	lokacija := ""
 
-	fajl, err := os.Open("resources/segmenti.txt")
+	fajl, err := os.Open("WriteAheadLog/resources/segmenti.txt")
 	if err != nil {
 		return "", "", err
 	}
@@ -123,7 +123,7 @@ func (wal *WriteAheadLog) ucitajSegment() (string, string, error) {
 		}
 
 		if wal.proveriSegment(popunjenaMemorija, popunjen) {
-			lokacija = "resources/" + ime + ".bin"
+			lokacija = "WriteAheadLog/resources/" + ime + ".bin"
 			return lokacija, ime, nil
 		}
 	}
@@ -151,7 +151,7 @@ func (wal *WriteAheadLog) proveriSegment(popunjenaMemorija int, popunjen int) bo
 }
 
 func (wal *WriteAheadLog) kreirajSegment() (string, string) {
-	fajl, err := os.ReadFile("resources/segmenti.txt")
+	fajl, err := os.ReadFile("WriteAheadLog/resources/segmenti.txt")
 	if err != nil {
 		errorFajl()
 	}
@@ -162,7 +162,7 @@ func (wal *WriteAheadLog) kreirajSegment() (string, string) {
 
 	ime := strings.Split(noviWAL, ",")[0]
 
-	fajlUpis, err := os.Create("resources/segmenti.txt")
+	fajlUpis, err := os.Create("WriteAheadLog/resources/segmenti.txt")
 	if err != nil {
 		errorFajl()
 	}
@@ -172,11 +172,11 @@ func (wal *WriteAheadLog) kreirajSegment() (string, string) {
 		fajlUpis.WriteString(linija + "\n")
 	}
 
-	return "resources/wal" + strconv.Itoa(len(linije)-1) + ".bin", ime
+	return "WriteAheadLog/resources/wal" + strconv.Itoa(len(linije)-1) + ".bin", ime
 }
 
 func (wal *WriteAheadLog) izmeniSegment(ime string) (bool, error) {
-	fajl, err := os.ReadFile("resources/segmenti.txt")
+	fajl, err := os.ReadFile("WriteAheadLog/resources/segmenti.txt")
 	if err != nil {
 		return false, err
 	}
@@ -210,7 +210,7 @@ func (wal *WriteAheadLog) izmeniSegment(ime string) (bool, error) {
 	}
 	noveLinije = slices.Delete(noveLinije, len(noveLinije)-1, len(noveLinije))
 
-	noviFajl, err := os.Create("resources/segmenti.txt")
+	noviFajl, err := os.Create("WriteAheadLog/resources/segmenti.txt")
 	if err != nil {
 		return false, err
 	}
@@ -224,7 +224,7 @@ func (wal *WriteAheadLog) izmeniSegment(ime string) (bool, error) {
 }
 
 func (wal *WriteAheadLog) ucitajWriteAheadLog() {
-	fajlovi, err := os.ReadDir("resources")
+	fajlovi, err := os.ReadDir("WriteAheadLog/resources")
 	if err != nil {
 		errorFajl()
 	}
@@ -237,7 +237,7 @@ func (wal *WriteAheadLog) ucitajWriteAheadLog() {
 	}
 
 	for _, segment := range segmenti {
-		fajl, err := os.Open("resources/" + segment)
+		fajl, err := os.Open("WriteAheadLog/resources/" + segment)
 		if err != nil {
 			errorFajl()
 		}

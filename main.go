@@ -1,17 +1,23 @@
 package main
 
 import (
+	configuration "NASP_projekat/Configuration"
 	probabilistics "NASP_projekat/Probabilistics"
 	cms "NASP_projekat/Probabilistics/CountMinSketch"
+	wal "NASP_projekat/WriteAheadLog"
 	"fmt"
 	"os"
 )
 
+// ispraviti lokacije za fajlove da idu od main.go fajla
+// ispravljeno je za CMS i WAL
 func meni() {
 	for {
 		fmt.Println("===== No-SQL Engine =====")
+		fmt.Println()
 		fmt.Println("1 - Probabilisticke strukture")
 		fmt.Println("2 - Konfiguracija")
+		fmt.Println("3 - Put") // testiranje
 		fmt.Println("0 - Izlaz")
 
 		fmt.Print("Unesite jednu od ponudjenih opcija: ")
@@ -21,7 +27,12 @@ func meni() {
 		case 1:
 			probabilistics.ProbabilistickeStruktureMeni()
 		case 2:
-			// konfiguracija
+			configuration.KonfiguracijaMeni()
+		case 3:
+			wal.Unesi("put", "asap", "rocky")
+			wal.Unesi("put", "milica", "coralic")
+			wal.Unesi("delete", "milica", "")
+			wal.Ispisi()
 		case 0:
 			ocistiProzor()
 			fmt.Println("Izasli ste iz aplikacije.")

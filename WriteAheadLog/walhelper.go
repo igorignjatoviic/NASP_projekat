@@ -1,4 +1,4 @@
-package main
+package wal
 
 import (
 	"hash/crc32"

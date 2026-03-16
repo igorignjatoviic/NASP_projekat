@@ -1,12 +1,11 @@
-package main
+package wal
 
-func main() {
+func Unesi(dogadjaj string, kljuc string, vrednost string) {
 	wal := WriteAheadLog{}
+	wal.unesi(dogadjaj, kljuc, vrednost)
+}
 
-	wal.unesi("put", "cao", "igor")
-	wal.unesi("put", "hejjj", "neda")
-	wal.unesi("put", "diskretna", "matematika")
-	wal.unesi("delete", "cao", "")
-
+func Ispisi() {
+	wal := WriteAheadLog{}
 	wal.ucitajWriteAheadLog()
 }
