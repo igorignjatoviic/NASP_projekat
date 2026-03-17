@@ -10,7 +10,7 @@ import (
 )
 
 // ispraviti lokacije za fajlove da idu od main.go fajla
-// ispravljeno je za CMS i WAL
+// ispravljeno je za CMS, WAL, BF i HLL
 func meni() {
 	for {
 		fmt.Println("===== No-SQL Engine =====")

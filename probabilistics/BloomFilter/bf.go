@@ -36,7 +36,7 @@ func unesiBroj(prompt string) int {
 }
 
 func BloomFilterMeni() {
-	const filename = "bloomfilter.dat"
+	const filename = "Probabilistics/BloomFilter/bloomfilter.dat"
 	seed := uint32(time.Now().Unix()) // moze nesto randomm!
 	bf := NewBloomFilter(1000, 0.01, seed)
 

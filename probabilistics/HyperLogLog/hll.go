@@ -50,7 +50,7 @@ func unesiNazivHLL(novi bool) (string, string) {
 		fmt.Print("Unesite naziv: ")
 		naziv = unesiString()
 		//fmt.Scanln()
-		lokacija = naziv + ".bin"
+		lokacija = "Probabilistics/HyperLogLog/" + naziv + ".bin"
 		if novi {
 			if !proveriPutanju(lokacija) {
 				break
