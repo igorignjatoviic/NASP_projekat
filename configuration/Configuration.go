@@ -9,7 +9,7 @@ import (
 
 // dodati ostale strukture u konfiguraciju
 func KonfiguracijaMeni() {
-	konfiguracija := ucitajKonfiguraciju()
+	konfiguracija := UcitajKonfiguraciju()
 
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
@@ -116,7 +116,7 @@ func unesiBroj() float32 {
 	}
 }
 
-func ucitajKonfiguraciju() map[string]map[string]uint64 {
+func UcitajKonfiguraciju() map[string]map[string]uint64 {
 	konfiguracija := make(map[string]map[string]uint64)
 
 	podaci, err := os.ReadFile("Configuration/resources/configuration_file.json")

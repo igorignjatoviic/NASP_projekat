@@ -1,6 +1,7 @@
 package wal
 
 import (
+	configuration "NASP_projekat/Configuration"
 	"bufio"
 	"encoding/binary"
 	"fmt"
@@ -21,8 +22,9 @@ type WriteAheadLog struct {
 }
 
 func (wal *WriteAheadLog) unesi(dogadjaj, kljuc, vrednost string) {
-	wal.maksimalnaMemorija = 200
-	wal.padding = 50
+	konfiguracija := configuration.UcitajKonfiguraciju()
+	wal.maksimalnaMemorija = int(konfiguracija["WriteAheadLog"]["Velicina segmenta"])
+	wal.padding = int(konfiguracija["WriteAheadLog"]["Padding"])
 
 	wal.izracunajTimestamp()
 	wal.izracunajTombstone(dogadjaj)
