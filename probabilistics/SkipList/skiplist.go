@@ -15,9 +15,11 @@ import (
 // =============================
 
 type Cvor struct {
-	kljuc    string
-	vrednost []byte
-	sledeci  []*Cvor // sledeci[i] = sledeci cvor na nivou i
+	kljuc     string
+	vrednost  []byte
+	timestamp int64
+	tombstone bool
+	sledeci   []*Cvor // sledeci[i] = sledeci cvor na nivou i
 }
 
 type SkipLista struct {
@@ -25,6 +27,13 @@ type SkipLista struct {
 	maksVisina     int // maksimalni indeks nivoa, ukupno nivoa = maksVisina+1
 	trenutnaVisina int // najveci nivo koji je trenutno aktivan (indeks)
 	brojElemenata  int
+	maxElemenata   int
+}
+
+type Unos struct {
+	vrednost  []byte
+	timestamp int64
+	tombstone bool
 }
 
 // Kreiranje
@@ -32,7 +41,7 @@ type SkipLista struct {
 
 // NovaSkipLista kreira praznu skip listu.
 // maksVisina je maksimalni indeks nivoa
-func NovaSkipLista(maksVisina int) *SkipLista {
+func NovaSkipLista(maksVisina int, maxElemenata int) *SkipLista {
 	if maksVisina < 1 {
 		maksVisina = 16
 	}
@@ -47,6 +56,7 @@ func NovaSkipLista(maksVisina int) *SkipLista {
 		maksVisina:     maksVisina,
 		trenutnaVisina: 0,
 		brojElemenata:  0,
+		maxElemenata:   maxElemenata,
 	}
 }
 
@@ -58,7 +68,7 @@ func (s *SkipLista) Duzina() int {
 // =============================
 
 // Nadji pretrazuje kljuc i vraca (vrednost, true) ako postoji
-func (s *SkipLista) Nadji(kljuc string) ([]byte, bool) {
+func (s *SkipLista) Dobavi(kljuc string) ([]byte, bool) {
 	x := s.glava
 
 	for nivo := s.trenutnaVisina; nivo >= 0; nivo-- {
@@ -69,6 +79,9 @@ func (s *SkipLista) Nadji(kljuc string) ([]byte, bool) {
 
 	x = x.sledeci[0]
 	if x != nil && x.kljuc == kljuc {
+		if x.tombstone {
+			return nil, false
+		}
 		return bytes.Clone(x.vrednost), true
 	}
 
@@ -91,6 +104,8 @@ func (s *SkipLista) Ubaci(kljuc string, vrednost []byte) {
 
 	if x != nil && x.kljuc == kljuc {
 		x.vrednost = bytes.Clone(vrednost)
+		x.timestamp = time.Now().UnixNano()
+		x.tombstone = false
 		return
 	}
 
@@ -104,9 +119,11 @@ func (s *SkipLista) Ubaci(kljuc string, vrednost []byte) {
 	}
 
 	novi := &Cvor{
-		kljuc:    kljuc,
-		vrednost: bytes.Clone(vrednost),
-		sledeci:  make([]*Cvor, noviNivo+1),
+		kljuc:     kljuc,
+		vrednost:  bytes.Clone(vrednost),
+		timestamp: time.Now().UnixNano(),
+		tombstone: false,
+		sledeci:   make([]*Cvor, noviNivo+1),
 	}
 
 	// Prevezi pokazivace na svim nivoima koje novi cvor ima
@@ -131,23 +148,36 @@ func (s *SkipLista) Obrisi(kljuc string) bool {
 	}
 
 	x = x.sledeci[0]
-	if x == nil || x.kljuc != kljuc {
-		return false
-	}
-
-	// Prevezivanje, preskace se x
-	for nivo := 0; nivo <= s.trenutnaVisina; nivo++ {
-		if update[nivo].sledeci[nivo] != x {
-			break
+	if x != nil && x.kljuc == kljuc {
+		if x.tombstone {
+			return false //već obrisan
 		}
-		update[nivo].sledeci[nivo] = x.sledeci[nivo]
+		x.tombstone = true
+		x.timestamp = time.Now().UnixNano()
+		return true
+	}
+	//ukoliko trazeni kljuc ne postoji, ubacujemo tombstone cvor na odgovarajuce mesto
+	noviNivo := s.izvuciNivo()
+
+	if noviNivo > s.trenutnaVisina {
+		for nivo := s.trenutnaVisina + 1; nivo <= noviNivo; nivo++ {
+			update[nivo] = s.glava
+		}
 	}
 
-	for s.trenutnaVisina > 0 && s.glava.sledeci[s.trenutnaVisina] == nil {
-		s.trenutnaVisina--
+	novi := &Cvor{
+		kljuc:     kljuc,
+		vrednost:  nil,
+		timestamp: time.Now().UnixNano(),
+		tombstone: true,
+		sledeci:   make([]*Cvor, noviNivo+1),
 	}
 
-	s.brojElemenata--
+	for nivo := 0; nivo <= noviNivo; nivo++ {
+		novi.sledeci[nivo] = update[nivo].sledeci[nivo]
+		update[nivo].sledeci[nivo] = novi
+	}
+	s.brojElemenata++
 	return true
 }
 
@@ -167,61 +197,8 @@ func (s *SkipLista) izvuciNivo() int {
 }
 
 // Serijalizacija
-// =============================
-
-// Nivo cvora cuvamo da bismo pri ucitavanju rekonstruisali istu strukturu
-func (s *SkipLista) Sacuvaj(putanja string) error {
-	f, err := os.Create(putanja)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	w := bufio.NewWriter(f)
-	defer w.Flush()
-
-	// header
-	if _, err := w.Write([]byte{'S', 'K', 'I', 'P'}); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.BigEndian, uint16(1)); err != nil { // verzija
-		return err
-	}
-	if err := binary.Write(w, binary.BigEndian, uint16(s.maksVisina)); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.BigEndian, uint32(s.brojElemenata)); err != nil {
-		return err
-	}
-
-	// elementi
-	for x := s.glava.sledeci[0]; x != nil; x = x.sledeci[0] {
-		nivoCvora := uint8(len(x.sledeci) - 1)
-		if err := binary.Write(w, binary.BigEndian, nivoCvora); err != nil {
-			return err
-		}
-
-		kb := []byte(x.kljuc)
-		if err := binary.Write(w, binary.BigEndian, uint32(len(kb))); err != nil {
-			return err
-		}
-		if _, err := w.Write(kb); err != nil {
-			return err
-		}
-
-		vb := x.vrednost
-		if err := binary.Write(w, binary.BigEndian, uint32(len(vb))); err != nil {
-			return err
-		}
-		if _, err := w.Write(vb); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func UcitajSkipListu(putanja string) (*SkipLista, error) {
+// ===========================
+func UcitajSkipListu(putanja string) (*SkipLista, error) { //za testiranje, nije neophodno
 	f, err := os.Open(putanja)
 	if err != nil {
 		return nil, err
@@ -257,7 +234,7 @@ func UcitajSkipListu(putanja string) (*SkipLista, error) {
 		return nil, err
 	}
 
-	sl := NovaSkipLista(int(maksVisina))
+	sl := NovaSkipLista(int(maksVisina), 0)
 
 	for i := uint32(0); i < broj; i++ {
 		var nivoCvora uint8
@@ -290,7 +267,7 @@ func UcitajSkipListu(putanja string) (*SkipLista, error) {
 }
 
 // ubaciSaNivoom ubacuje cvor sa zadatim nivoom, koristi se pri ucitavanju
-func (s *SkipLista) ubaciSaNivoom(kljuc string, vrednost []byte, nivoCvora int) {
+func (s *SkipLista) ubaciSaNivoom(kljuc string, vrednost []byte, nivoCvora int) { //za tesiranje, nije neophodno
 	if nivoCvora > s.maksVisina {
 		nivoCvora = s.maksVisina
 	}
@@ -327,4 +304,35 @@ func (s *SkipLista) ubaciSaNivoom(kljuc string, vrednost []byte, nivoCvora int) 
 		update[nivo].sledeci[nivo] = novi
 	}
 	s.brojElemenata++
+}
+
+func (s *SkipLista) DobaviSve() []Unos {
+	var rezultat []Unos
+
+	x := s.glava.sledeci[0]
+
+	if x != nil {
+		rezultat = append(rezultat, Unos{
+			vrednost:  bytes.Clone(x.vrednost),
+			timestamp: x.timestamp,
+			tombstone: x.tombstone,
+		})
+		x = x.sledeci[0]
+	}
+	return rezultat
+}
+
+func (s *SkipLista) Isprazni() {
+	s.glava = &Cvor{
+		sledeci: make([]*Cvor, s.maksVisina+1),
+	}
+	s.trenutnaVisina = 0
+	s.brojElemenata = 0
+}
+
+func (s *SkipLista) DaLiFlush() bool {
+	if s.maxElemenata <= 0 {
+		return false
+	}
+	return s.brojElemenata >= s.maxElemenata
 }
