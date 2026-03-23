@@ -1,10 +1,10 @@
-package main
+package bufferpool
 
 import (
 	"fmt"
 )
 
-func main() {
+func BufferPoolMeni() {
 	var bp *BufferPool
 	var opcija int
 
@@ -33,7 +33,7 @@ func main() {
 				fmt.Println("Buffer pool nije napravljen.")
 				continue
 			}
-			var id int
+			var id string
 			var blok string
 			fmt.Println("Unesite id bloka:")
 			fmt.Scan(&id)
@@ -46,7 +46,7 @@ func main() {
 				fmt.Println("Buffer pool nije napravljen.")
 				continue
 			}
-			var id int
+			var id string
 			fmt.Println("Unesite id bloka:")
 			fmt.Scan(&id)
 
@@ -55,30 +55,32 @@ func main() {
 				fmt.Println("Trazeni blok: ", string(pod))
 			}
 		case 4:
-			if bp == nil {
-				fmt.Println("Buffer pool nije napravljen.")
-				continue
-			}
-			var fajl string
-			fmt.Println("Unesi ime fajla: ")
-			fmt.Scan(&fajl)
+			/*
+				if bp == nil {
+					fmt.Println("Buffer pool nije napravljen.")
+					continue
+				}
+				var fajl string
+				fmt.Println("Unesi ime fajla: ")
+				fmt.Scan(&fajl)*/
 
-			err := bp.SacuvajUFajl(fajl)
+			err := bp.SacuvajUFajl("BufferPool/fajl.txt")
 			if err != nil {
 				fmt.Println("Greska pri otvaranju fajla.")
 			} else {
 				fmt.Println("Sacuvano")
 			}
 		case 5:
-			var fajl string
-			fmt.Println("Unesi ime fajla: ")
-			fmt.Scan(&fajl)
+			/*
+				var fajl string
+				fmt.Println("Unesi ime fajla: ")
+				fmt.Scan(&fajl)*/
 
 			var vel int
 			fmt.Println("Unesi velicinu buffer poola: ")
-			fmt.Scan(&vel)
+			fmt.Scan(&vel) // konfiguracija
 
-			ucitanbp, err := UcitajIzFajla(fajl, vel)
+			ucitanbp, err := UcitajIzFajla("BufferPool/fajl.txt", vel)
 			if err != nil {
 				fmt.Println("Greska pri otvaranju fajla.")
 			} else {
@@ -95,7 +97,7 @@ func main() {
 				fmt.Println("Redosled: ", bp.redosled)
 				fmt.Println("Podaci:")
 				for k, v := range bp.podaci {
-					fmt.Printf("%d:%s\n", k, string(v))
+					fmt.Printf("%s:%s\n", k, string(v))
 				}
 			}
 		case 0:

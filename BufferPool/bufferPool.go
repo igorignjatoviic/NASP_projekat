@@ -1,29 +1,30 @@
-package main
+package bufferpool
 
 import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type BufferPool struct {
-	velicina int            //velicina poola
-	redosled []int          //niz id blokova
-	podaci   map[int][]byte //mapa id-sadrzaj bloka
+	velicina int               //velicina poola
+	redosled []string          //niz id blokova
+	podaci   map[string][]byte //mapa id-sadrzaj bloka
 }
 
 // kad pravimo prazan bp prosledjujemo velicinu pool
 func Napravi(velPool int) *BufferPool {
 	return &BufferPool{
 		velicina: velPool,
-		redosled: make([]int, 0, velPool),
-		podaci:   make(map[int][]byte),
+		redosled: make([]string, 0, velPool),
+		podaci:   make(map[string][]byte),
 	}
 }
 
 // upis-upise na kraj ako je popunjen vrati inf da je popunjen
 // prosledjuje mu se id stranice bloka i sadrzaj bloka
-func (bp *BufferPool) Upisi(id int, sadrzaj []byte) {
+func (bp *BufferPool) Upisi(id string, sadrzaj []byte) {
 	//ako vec postoji azurira mu se pozicija
 	_, postoji := bp.podaci[id]
 	if postoji {
@@ -51,11 +52,12 @@ func (bp *BufferPool) Upisi(id int, sadrzaj []byte) {
 		//ako ne postoji i nije pun dodaj u mapu i na kraj niza
 		bp.podaci[id] = sadrzaj
 		bp.redosled = append(bp.redosled, id)
+
 	}
 }
 
 // citanje-nadje ga-izbaci ga i upise na kraj-vrati ga
-func (bp *BufferPool) Citaj(id int) []byte {
+func (bp *BufferPool) Citaj(id string) []byte {
 	//nadjemo ga u mapi
 	pod, postoji := bp.podaci[id]
 	if !postoji {
@@ -85,7 +87,7 @@ func (bp *BufferPool) SacuvajUFajl(fajl string) error {
 
 	for _, id := range bp.redosled {
 		pod := bp.podaci[id]
-		linija := fmt.Sprintf("%d:%s\n", id, string(pod))
+		linija := fmt.Sprintf("%s:%s\n", id, string(pod))
 		f.WriteString(linija)
 	}
 	return nil
@@ -103,9 +105,14 @@ func UcitajIzFajla(fajl string, vel int) (*BufferPool, error) {
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		var id int
+		linija := scanner.Text()
+		if strings.TrimSpace(linija) == "" {
+			continue
+		}
+
+		var id string
 		var tekst string
-		fmt.Sscanf(scanner.Text(), "%d:%s", &id, &tekst)
+		fmt.Sscanf(scanner.Text(), "%s:%s", &id, &tekst)
 		bp.Upisi(id, []byte(tekst))
 	}
 	return bp, nil

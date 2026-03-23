@@ -1,10 +1,10 @@
-package main
+package simhash
 
 import (
 	"fmt"
 )
 
-func main() {
+func SimHashMeni() {
 	var opcija int
 	var hash1, hash2 string
 
@@ -64,7 +64,6 @@ func main() {
 			fmt.Println("SimHash vrednosti su obrisane")
 
 		case 0:
-			fmt.Println("Izlazak iz programa...")
 			return
 
 		default:
