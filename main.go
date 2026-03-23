@@ -31,7 +31,8 @@ func meni() {
 		case 3:
 			wal.Unesi("put", "asap", "rocky")
 			wal.Unesi("put", "milica", "coralic")
-			wal.Unesi("delete", "milica", "")
+			wal.Unesi("put", "marko", "zzz")
+
 			wal.Ispisi()
 		case 0:
 			ocistiProzor()
