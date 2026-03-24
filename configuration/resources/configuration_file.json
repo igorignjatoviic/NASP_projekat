@@ -1,4 +1,7 @@
 {
+  "BufferPool": {
+    "Velicina segmenta": 15
+  },
   "WriteAheadLog": {
     "Padding": 50,
     "Velicina segmenta": 200

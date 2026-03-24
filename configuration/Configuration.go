@@ -10,12 +10,6 @@ import (
 // dodati ostale strukture u konfiguraciju
 func KonfiguracijaMeni() {
 	konfiguracija := UcitajKonfiguraciju()
-	mapa := make(map[string]uint64)
-	mapa["Velicina"] = 10
-	konfiguracija["BufferPool"] = mapa
-	for key, value := range konfiguracija {
-		fmt.Println(key, value)
-	} // malo popraviti, ulepsati
 
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
@@ -27,15 +21,18 @@ func KonfiguracijaMeni() {
 
 	switch opcija {
 	case 1:
-		konfiguracijaWriteAheadLoga(konfiguracija)
+		konfiguracijaStruktura(konfiguracija, "WriteAheadLog")
+	case 2:
+		konfiguracijaStruktura(konfiguracija, "BufferPool")
 	case 0:
 		return
 	}
 }
 
-func konfiguracijaWriteAheadLoga(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
+	struktura string) map[string]map[string]uint64 {
 	ocistiProzor()
-	fmt.Print("===== Konfiguracija WriteAheadLog-a =====\n\n")
+	fmt.Print("===== Konfiguracija", struktura, "=====\n\n")
 	fmt.Println("1 - Trenutna konfiguracija")
 	fmt.Println("2 - Izmeni konfiguraciju")
 
@@ -44,9 +41,15 @@ func konfiguracijaWriteAheadLoga(korenskaKonfig map[string]map[string]uint64) ma
 
 	switch opcija {
 	case 1:
-		trenutnaKonfiguracijaStrukture(korenskaKonfig, "WriteAheadLog")
+		trenutnaKonfiguracijaStrukture(korenskaKonfig, struktura)
 	case 2:
-		korenskaKonfig = izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig)
+		switch struktura {
+		case "WriteAheadLog":
+			korenskaKonfig = izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig)
+		case "BufferPool":
+			korenskaKonfig = izmeniKonfiguracijuBufferPoola(korenskaKonfig)
+
+		}
 
 		podaci, err := json.MarshalIndent(korenskaKonfig, "", "  ")
 		if err != nil {
@@ -55,25 +58,10 @@ func konfiguracijaWriteAheadLoga(korenskaKonfig map[string]map[string]uint64) ma
 
 		upisiKonfiguraciju(podaci)
 
-		fmt.Println("Uspesno izmenjena konfiguracija WriteAheadLog-a.")
+		fmt.Println("Uspesno izmenjena konfiguracija.")
 	}
 
 	return korenskaKonfig
-}
-
-func konfiguracijaBufferPoola(korenskaKonfig map[string]map[string]uint64) {
-	ocistiProzor()
-	fmt.Print("===== Konfiguracija BufferPoola-a =====\n\n")
-	fmt.Println("1 - Trenutna konfiguracija")
-	fmt.Println("2 - Izmeni konfiguraciju")
-
-	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
-	opcija := unesiBroj()
-
-	switch opcija {
-	case 1:
-		trenutnaKonfiguracijaStrukture(korenskaKonfig, "BufferPool")
-	}
 }
 
 func trenutnaKonfiguracijaStrukture(korenskaKonfig map[string]map[string]uint64, struktura string) {
@@ -97,7 +85,7 @@ func izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig map[string]map[string]uint
 
 	switch opcija {
 	case 1:
-		korenskaKonfig = izmeniVelicinuSegmenta(korenskaKonfig)
+		korenskaKonfig = izmeniVelicinuSegmenta(korenskaKonfig, "WriteAheadLog")
 	case 2:
 		korenskaKonfig = izmeniPadding(korenskaKonfig)
 	}
@@ -105,11 +93,27 @@ func izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig map[string]map[string]uint
 	return korenskaKonfig
 }
 
-func izmeniVelicinuSegmenta(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+func izmeniKonfiguracijuBufferPoola(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	ocistiProzor()
+	fmt.Print("===== Izmena konfiguracije BufferPool-a =====\n\n")
+	fmt.Println("1 - Velicina BufferPool-a")
+
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
+	opcija := unesiBroj()
+
+	switch opcija {
+	case 1:
+		korenskaKonfig = izmeniVelicinuSegmenta(korenskaKonfig, "BufferPool")
+	}
+
+	return korenskaKonfig
+}
+
+func izmeniVelicinuSegmenta(korenskaKonfig map[string]map[string]uint64, struktura string) map[string]map[string]uint64 {
 	fmt.Print("Unesite novu velicinu segmenta: ")
 	velicinaSegmenta := unesiBroj()
 
-	korenskaKonfig["WriteAheadLog"]["Velicina segmenta"] = uint64(velicinaSegmenta)
+	korenskaKonfig[struktura]["Velicina segmenta"] = uint64(velicinaSegmenta)
 
 	return korenskaKonfig
 }
