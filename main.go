@@ -27,7 +27,7 @@ func meni() {
 		case 2:
 			configuration.KonfiguracijaMeni()
 		case 3:
-			wal.Unesi("put", "mad", "villiany")
+			wal.Unesi("put", "operation", "doomsday")
 
 			wal.Ispisi()
 		case 0:

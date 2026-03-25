@@ -1,12 +1,12 @@
 package bufferpool
 
 import (
+	configuration "NASP_projekat/Configuration"
 	"encoding/binary"
 	"fmt"
 	"os"
 )
 
-// novi bufferpool
 type Tuple struct {
 	Dogadjaj        string
 	duzinaKljuca    uint64
@@ -68,9 +68,11 @@ func (bp *BufferPool) Unesi(niz []Tuple) error {
 }
 
 func NoviBufferPool() *BufferPool {
-	velicina := 5
+	konfiguracija := configuration.UcitajKonfiguraciju()
+	velicina := konfiguracija["BufferPool"]["Velicina segmenta"]
+
 	return &BufferPool{
-		velicina: uint64(velicina), // zapravo cita iz konfiguracija
+		velicina: uint64(velicina),
 		podaci:   make([]Tuple, velicina),
 	}
 }
@@ -137,7 +139,7 @@ func Ucitaj() []Tuple {
 	}
 	defer fajl.Close()
 
-	for i := range bp.velicina { // fiksna velicina za sada
+	for i := range bp.velicina {
 		var tombstone uint8
 		binary.Read(fajl, binary.BigEndian, &tombstone)
 
