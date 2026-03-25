@@ -1,119 +1,165 @@
 package bufferpool
 
 import (
-	"bufio"
+	"encoding/binary"
 	"fmt"
 	"os"
-	"strings"
 )
 
+// novi bufferpool
+type Tuple struct {
+	Dogadjaj        string
+	duzinaKljuca    uint64
+	duzinaVrednosti uint64
+	Kljuc           string
+	Vrednost        string
+}
+
+func NoviTuple(dogadjaj string, kljuc string, vrednost string) *Tuple {
+	return &Tuple{
+		Dogadjaj:        dogadjaj,
+		Kljuc:           kljuc,
+		Vrednost:        vrednost,
+		duzinaKljuca:    uint64(len(kljuc)),
+		duzinaVrednosti: uint64(len(vrednost)),
+	}
+}
+
 type BufferPool struct {
-	velicina int               //velicina poola
-	redosled []string          //niz id blokova
-	podaci   map[string][]byte //mapa id-sadrzaj bloka
+	velicina uint64
+	podaci   []Tuple
 }
 
-// kad pravimo prazan bp prosledjujemo velicinu pool
-func Napravi(velPool int) *BufferPool {
-	return &BufferPool{
-		velicina: velPool,
-		redosled: make([]string, 0, velPool),
-		podaci:   make(map[string][]byte),
-	}
-}
-
-// upis-upise na kraj ako je popunjen vrati inf da je popunjen
-// prosledjuje mu se id stranice bloka i sadrzaj bloka
-func (bp *BufferPool) Upisi(id string, sadrzaj []byte) {
-	//ako vec postoji azurira mu se pozicija
-	_, postoji := bp.podaci[id]
-	if postoji {
-		//ukloni iz liste
-		for i, vr := range bp.redosled {
-			if vr == id {
-				bp.redosled = append(bp.redosled[:i], bp.redosled[i+1:]...)
-				break
-			}
-		}
-		//dodaj na kraj
-		bp.redosled = append(bp.redosled, id)
-		//azuriraj blok
-		bp.podaci[id] = sadrzaj
-
-	} else {
-		//da li je pun
-		if len(bp.redosled) >= bp.velicina {
-			fmt.Printf("Buffer pool je pun uradi flush. Hvala Milice!")
-			najstariji := bp.redosled[0]
-			//izbaci iz mape i liste najstariji da bi bilo mesta za novi
-			delete(bp.podaci, najstariji)
-			bp.redosled = bp.redosled[1:]
-		}
-		//ako ne postoji i nije pun dodaj u mapu i na kraj niza
-		bp.podaci[id] = sadrzaj
-		bp.redosled = append(bp.redosled, id)
-
-	}
-}
-
-// citanje-nadje ga-izbaci ga i upise na kraj-vrati ga
-func (bp *BufferPool) Citaj(id string) []byte {
-	//nadjemo ga u mapi
-	pod, postoji := bp.podaci[id]
-	if !postoji {
-		fmt.Printf("Ne postoji taj blok.")
-		return nil
-	}
-	//ukloni iz liste
-	for i, vr := range bp.redosled {
-		if vr == id {
-			bp.redosled = append(bp.redosled[:i], bp.redosled[i+1:]...)
-			break
-		}
-	}
-	//dodaj na kraj
-	bp.redosled = append(bp.redosled, id)
-	return pod
-
-}
-
-// cuvam sve podatke iz niza u fajlu
-func (bp *BufferPool) SacuvajUFajl(fajl string) error {
-	f, err := os.Create((fajl))
+func (bp *BufferPool) Unesi(niz []Tuple) error {
+	fajl, err := os.Create("BufferPool/resources/bufferpool.bin")
 	if err != nil {
 		return err
 	}
-	defer f.Close() //zatvara fajl na kraju funkcije sta god da se desi
+	defer fajl.Close()
 
-	for _, id := range bp.redosled {
-		pod := bp.podaci[id]
-		linija := fmt.Sprintf("%s:%s\n", id, string(pod))
-		f.WriteString(linija)
-	}
-	return nil
-
-}
-
-// pravim bp na osnovu fajla
-func UcitajIzFajla(fajl string, vel int) (*BufferPool, error) {
-	f, err := os.Open(fajl)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	bp := Napravi(vel)
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		linija := scanner.Text()
-		if strings.TrimSpace(linija) == "" {
-			continue
+	for _, podatak := range niz {
+		tombstone := 0
+		if podatak.Dogadjaj == "delete" {
+			tombstone = 1
 		}
 
-		var id string
-		var tekst string
-		fmt.Sscanf(scanner.Text(), "%s:%s", &id, &tekst)
-		bp.Upisi(id, []byte(tekst))
+		if err := binary.Write(fajl, binary.BigEndian, uint8(tombstone)); err != nil {
+			fmt.Println(err)
+		}
+		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.duzinaKljuca)); err != nil {
+			fmt.Println(err)
+		}
+		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.duzinaVrednosti)); err != nil {
+			fmt.Println(err)
+		}
+
+		kljuc := []byte(podatak.Kljuc)
+		if err := binary.Write(fajl, binary.BigEndian, kljuc); err != nil {
+			fmt.Println(err)
+		}
+
+		vrednost := []byte(podatak.Vrednost)
+		if err := binary.Write(fajl, binary.BigEndian, vrednost); err != nil {
+			fmt.Println(err)
+		}
 	}
-	return bp, nil
+
+	return nil
+}
+
+func NoviBufferPool() *BufferPool {
+	velicina := 5
+	return &BufferPool{
+		velicina: uint64(velicina), // zapravo cita iz konfiguracija
+		podaci:   make([]Tuple, velicina),
+	}
+}
+
+func OsveziBufferPool(buffer []Tuple, element Tuple) []Tuple {
+	for i := range len(buffer) - 1 {
+		buffer[i] = buffer[i+1]
+	}
+	buffer[len(buffer)-1] = element
+
+	return buffer
+}
+
+func GenerisiPocetniFajl() {
+	bp := BufferPool{}
+	bp.velicina = 5
+	bp.podaci = make([]Tuple, bp.velicina)
+
+	for i := range 5 {
+		t := NoviTuple("put", "igor", "njnjnjnjnj")
+		bp.podaci[i] = *t
+	}
+
+	fajl, err := os.Create("BufferPool/resources/bufferpool.bin")
+	if err != nil {
+		fmt.Println("Greska prilikom otvaranja fajla.")
+	}
+	defer fajl.Close()
+
+	for _, podatak := range bp.podaci {
+		tombstone := 0
+		if podatak.Dogadjaj == "delete" {
+			tombstone = 1
+		}
+
+		if err := binary.Write(fajl, binary.BigEndian, uint8(tombstone)); err != nil {
+			fmt.Println(err)
+		}
+		if err := binary.Write(fajl, binary.BigEndian, podatak.duzinaKljuca); err != nil {
+			fmt.Println(err)
+		}
+		if err := binary.Write(fajl, binary.BigEndian, podatak.duzinaVrednosti); err != nil {
+			fmt.Println(err)
+		}
+
+		kljuc := []byte(podatak.Kljuc)
+		if err := binary.Write(fajl, binary.BigEndian, kljuc); err != nil {
+			fmt.Println(err)
+		}
+
+		vrednost := []byte(podatak.Vrednost)
+		if err := binary.Write(fajl, binary.BigEndian, vrednost); err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+
+func Ucitaj() []Tuple {
+	bp := NoviBufferPool()
+
+	fajl, err := os.Open("BufferPool/resources/bufferpool.bin")
+	if err != nil {
+		fmt.Println("Greska prilikom otvaranja fajla u citanju.")
+	}
+	defer fajl.Close()
+
+	for i := range bp.velicina { // fiksna velicina za sada
+		var tombstone uint8
+		binary.Read(fajl, binary.BigEndian, &tombstone)
+
+		var duzinaKljuca uint64
+		binary.Read(fajl, binary.BigEndian, &duzinaKljuca)
+
+		var duzinaVrednosti uint64
+		binary.Read(fajl, binary.BigEndian, &duzinaVrednosti)
+
+		kljuc := make([]byte, duzinaKljuca)
+		binary.Read(fajl, binary.BigEndian, &kljuc)
+
+		vrednost := make([]byte, duzinaVrednosti)
+		binary.Read(fajl, binary.BigEndian, &vrednost)
+
+		dogadjaj := "put"
+		if tombstone == 1 {
+			dogadjaj = "delete"
+		}
+
+		bp.podaci[i] = *NoviTuple(dogadjaj, string(kljuc), string(vrednost))
+	}
+
+	return bp.podaci
 }

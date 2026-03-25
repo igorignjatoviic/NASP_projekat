@@ -9,8 +9,6 @@ import (
 	"os"
 )
 
-// ispraviti lokacije za fajlove da idu od main.go fajla
-// ispravljeno je za CMS, WAL, BF i HLL
 func meni() {
 	for {
 		fmt.Println("===== No-SQL Engine =====")
@@ -29,9 +27,7 @@ func meni() {
 		case 2:
 			configuration.KonfiguracijaMeni()
 		case 3:
-			wal.Unesi("put", "asap", "rocky")
-			wal.Unesi("put", "milica", "coralic")
-			wal.Unesi("put", "marko", "zzz")
+			wal.Unesi("put", "mad", "villiany")
 
 			wal.Ispisi()
 		case 0:
