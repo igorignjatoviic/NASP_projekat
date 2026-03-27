@@ -31,6 +31,7 @@ type SkipLista struct {
 }
 
 type Unos struct {
+	kljuc     string
 	vrednost  []byte
 	timestamp int64
 	tombstone bool
@@ -163,6 +164,7 @@ func (s *SkipLista) Obrisi(kljuc string) bool {
 		for nivo := s.trenutnaVisina + 1; nivo <= noviNivo; nivo++ {
 			update[nivo] = s.glava
 		}
+		s.trenutnaVisina = noviNivo
 	}
 
 	novi := &Cvor{
@@ -311,8 +313,9 @@ func (s *SkipLista) DobaviSve() []Unos {
 
 	x := s.glava.sledeci[0]
 
-	if x != nil {
+	for x != nil {
 		rezultat = append(rezultat, Unos{
+			kljuc:     x.kljuc,
 			vrednost:  bytes.Clone(x.vrednost),
 			timestamp: x.timestamp,
 			tombstone: x.tombstone,

@@ -2,9 +2,9 @@ package main
 
 import (
 	configuration "NASP_projekat/Configuration"
-	probabilistics "NASP_projekat/Probabilistics"
-	cms "NASP_projekat/Probabilistics/CountMinSketch"
 	wal "NASP_projekat/WriteAheadLog"
+	probabilistics "NASP_projekat/probabilistics"
+	cms "NASP_projekat/probabilistics/CountMinSketch"
 	"fmt"
 	"os"
 )

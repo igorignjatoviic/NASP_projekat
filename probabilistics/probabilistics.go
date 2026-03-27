@@ -1,10 +1,10 @@
 package probabilistics
 
 import (
-	bf "NASP_projekat/Probabilistics/BloomFilter"
-	cms "NASP_projekat/Probabilistics/CountMinSketch"
-	hll "NASP_projekat/Probabilistics/HyperLogLog"
-	sh "NASP_projekat/Probabilistics/Simhash"
+	bf "NASP_projekat/probabilistics/BloomFilter"
+	cms "NASP_projekat/probabilistics/CountMinSketch"
+	hll "NASP_projekat/probabilistics/HyperLogLog"
+	sh "NASP_projekat/probabilistics/Simhash"
 	"fmt"
 )
 
