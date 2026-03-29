@@ -1,16 +1,10 @@
 package btree
 
 import (
+	"NASP_projekat/memtables"
 	"bytes"
 	"time"
 )
-
-type Unos struct {
-	kljuc     string
-	vrednost  []byte
-	timestamp int64
-	tombstone bool
-}
 
 type BTreeNode struct {
 	kljucevi   []string
@@ -228,29 +222,29 @@ func (b *BTree) Obrisi(kljuc string) bool {
 	return true
 }
 
-func (b *BTree) DobaviSve() []Unos {
-	var rezultat []Unos
-	inorder(b.root, &rezultat)
+func (b *BTree) DobaviSve() []memtables.Unos {
+	var rezultat []memtables.Unos
+	poredjaj(b.root, &rezultat)
 	return rezultat
 }
 
-func inorder(cvor *BTreeNode, rezultat *[]Unos) { //vrati sortirano
+func poredjaj(cvor *BTreeNode, rezultat *[]memtables.Unos) { //vrati sortirano
 	if cvor == nil {
 		return
 	}
 	for i := 0; i < len(cvor.kljucevi); i++ {
 		if !cvor.list {
-			inorder(cvor.deca[i], rezultat)
+			poredjaj(cvor.deca[i], rezultat)
 		}
-		*rezultat = append(*rezultat, Unos{
-			kljuc:     cvor.kljucevi[i],
-			vrednost:  bytes.Clone(cvor.vrednosti[i]),
-			timestamp: cvor.timestamps[i],
-			tombstone: cvor.tombstones[i],
+		*rezultat = append(*rezultat, memtables.Unos{
+			Kljuc:     cvor.kljucevi[i],
+			Vrednost:  bytes.Clone(cvor.vrednosti[i]),
+			Timestamp: cvor.timestamps[i],
+			Tombstone: cvor.tombstones[i],
 		})
 	}
 	if !cvor.list {
-		inorder(cvor.deca[len(cvor.deca)-1], rezultat)
+		poredjaj(cvor.deca[len(cvor.deca)-1], rezultat)
 	}
 }
 
@@ -271,4 +265,30 @@ func (b *BTree) Isprazni() {
 		list:       true,
 	}
 	b.brojElemenata = 0
+}
+
+func (b *BTree) NadjiUnos(kljuc string) (memtables.Unos, bool) { //pomocna metoda za memtable sa vise instanci
+	return b.NadjiUnosIzCvora(b.root, kljuc)
+}
+
+func (b *BTree) NadjiUnosIzCvora(cvor *BTreeNode, kljuc string) (memtables.Unos, bool) {
+	i := 0
+	for i < len(cvor.kljucevi) && kljuc > cvor.kljucevi[i] {
+		i++
+	}
+
+	if i < len(cvor.kljucevi) && kljuc == cvor.kljucevi[i] {
+		return memtables.Unos{
+			Kljuc:     cvor.kljucevi[i],
+			Vrednost:  bytes.Clone(cvor.vrednosti[i]),
+			Timestamp: cvor.timestamps[i],
+			Tombstone: cvor.tombstones[i],
+		}, true
+	}
+
+	if cvor.list {
+		return memtables.Unos{}, false
+	}
+
+	return b.NadjiUnosIzCvora(cvor.deca[i], kljuc)
 }

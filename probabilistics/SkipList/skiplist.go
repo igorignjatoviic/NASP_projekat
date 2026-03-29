@@ -1,18 +1,11 @@
 package skiplist
 
 import (
-	"bufio"
+	"NASP_projekat/memtables"
 	"bytes"
-	"encoding/binary"
-	"errors"
-	"io"
 	"math/rand"
-	"os"
 	"time"
 )
-
-// Tipovi
-// =============================
 
 type Cvor struct {
 	kljuc     string
@@ -30,18 +23,6 @@ type SkipLista struct {
 	maxElemenata   int
 }
 
-type Unos struct {
-	kljuc     string
-	vrednost  []byte
-	timestamp int64
-	tombstone bool
-}
-
-// Kreiranje
-// =============================
-
-// NovaSkipLista kreira praznu skip listu.
-// maksVisina je maksimalni indeks nivoa
 func NovaSkipLista(maksVisina int, maxElemenata int) *SkipLista {
 	if maksVisina < 1 {
 		maksVisina = 16
@@ -64,9 +45,6 @@ func NovaSkipLista(maksVisina int, maxElemenata int) *SkipLista {
 func (s *SkipLista) Duzina() int {
 	return s.brojElemenata
 }
-
-// Osnovne operacije
-// =============================
 
 // Nadji pretrazuje kljuc i vraca (vrednost, true) ako postoji
 func (s *SkipLista) Dobavi(kljuc string) ([]byte, bool) {
@@ -184,7 +162,6 @@ func (s *SkipLista) Obrisi(kljuc string) bool {
 }
 
 // Bacanje novcica
-// =============================
 
 // izvuciNivo simulira bacanje novcica: dok dobijamo 1, dizemo nivo
 // Maksimum je s.maksVisina
@@ -198,127 +175,17 @@ func (s *SkipLista) izvuciNivo() int {
 	return nivo
 }
 
-// Serijalizacija
-// ===========================
-func UcitajSkipListu(putanja string) (*SkipLista, error) { //za testiranje, nije neophodno
-	f, err := os.Open(putanja)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	r := bufio.NewReader(f)
-
-	// magic
-	magic := make([]byte, 4)
-	if _, err := io.ReadFull(r, magic); err != nil {
-		return nil, err
-	}
-	if !bytes.Equal(magic, []byte{'S', 'K', 'I', 'P'}) {
-		return nil, errors.New("pogresan format")
-	}
-
-	var verzija uint16
-	if err := binary.Read(r, binary.BigEndian, &verzija); err != nil {
-		return nil, err
-	}
-	if verzija != 1 {
-		return nil, errors.New("nepodrzana verzija formata")
-	}
-
-	var maksVisina uint16
-	if err := binary.Read(r, binary.BigEndian, &maksVisina); err != nil {
-		return nil, err
-	}
-
-	var broj uint32
-	if err := binary.Read(r, binary.BigEndian, &broj); err != nil {
-		return nil, err
-	}
-
-	sl := NovaSkipLista(int(maksVisina), 0)
-
-	for i := uint32(0); i < broj; i++ {
-		var nivoCvora uint8
-		if err := binary.Read(r, binary.BigEndian, &nivoCvora); err != nil {
-			return nil, err
-		}
-
-		var duzinaK uint32
-		if err := binary.Read(r, binary.BigEndian, &duzinaK); err != nil {
-			return nil, err
-		}
-		kb := make([]byte, duzinaK)
-		if _, err := io.ReadFull(r, kb); err != nil {
-			return nil, err
-		}
-
-		var duzinaV uint32
-		if err := binary.Read(r, binary.BigEndian, &duzinaV); err != nil {
-			return nil, err
-		}
-		vb := make([]byte, duzinaV)
-		if _, err := io.ReadFull(r, vb); err != nil {
-			return nil, err
-		}
-
-		sl.ubaciSaNivoom(string(kb), vb, int(nivoCvora))
-	}
-
-	return sl, nil
-}
-
-// ubaciSaNivoom ubacuje cvor sa zadatim nivoom, koristi se pri ucitavanju
-func (s *SkipLista) ubaciSaNivoom(kljuc string, vrednost []byte, nivoCvora int) { //za tesiranje, nije neophodno
-	if nivoCvora > s.maksVisina {
-		nivoCvora = s.maksVisina
-	}
-	update := make([]*Cvor, s.maksVisina+1)
-	x := s.glava
-
-	for nivo := s.trenutnaVisina; nivo >= 0; nivo-- {
-		for x.sledeci[nivo] != nil && x.sledeci[nivo].kljuc < kljuc {
-			x = x.sledeci[nivo]
-		}
-		update[nivo] = x
-	}
-
-	x = x.sledeci[0]
-	if x != nil && x.kljuc == kljuc {
-		x.vrednost = bytes.Clone(vrednost)
-		return
-	}
-
-	if nivoCvora > s.trenutnaVisina {
-		for nivo := s.trenutnaVisina + 1; nivo <= nivoCvora; nivo++ {
-			update[nivo] = s.glava
-		}
-		s.trenutnaVisina = nivoCvora
-	}
-
-	novi := &Cvor{
-		kljuc:    kljuc,
-		vrednost: bytes.Clone(vrednost),
-		sledeci:  make([]*Cvor, nivoCvora+1),
-	}
-	for nivo := 0; nivo <= nivoCvora; nivo++ {
-		novi.sledeci[nivo] = update[nivo].sledeci[nivo]
-		update[nivo].sledeci[nivo] = novi
-	}
-	s.brojElemenata++
-}
-
-func (s *SkipLista) DobaviSve() []Unos {
-	var rezultat []Unos
+func (s *SkipLista) DobaviSve() []memtables.Unos {
+	var rezultat []memtables.Unos
 
 	x := s.glava.sledeci[0]
 
 	for x != nil {
-		rezultat = append(rezultat, Unos{
-			kljuc:     x.kljuc,
-			vrednost:  bytes.Clone(x.vrednost),
-			timestamp: x.timestamp,
-			tombstone: x.tombstone,
+		rezultat = append(rezultat, memtables.Unos{
+			Kljuc:     x.kljuc,
+			Vrednost:  bytes.Clone(x.vrednost),
+			Timestamp: x.timestamp,
+			Tombstone: x.tombstone,
 		})
 		x = x.sledeci[0]
 	}
@@ -338,4 +205,24 @@ func (s *SkipLista) DaLiFlush() bool {
 		return false
 	}
 	return s.brojElemenata >= s.maxElemenata
+}
+
+func (s *SkipLista) NadjiUnos(kljuc string) (memtables.Unos, bool) { //pomocna metoda za memtable sa vise instanci
+	x := s.glava
+
+	for nivo := s.trenutnaVisina; nivo >= 0; nivo-- {
+		for x.sledeci[nivo] != nil && x.sledeci[nivo].kljuc < kljuc {
+			x = x.sledeci[nivo]
+		}
+	}
+	x = x.sledeci[0]
+	if x != nil && kljuc == x.kljuc {
+		return memtables.Unos{
+			Kljuc:     kljuc,
+			Vrednost:  bytes.Clone(x.vrednost),
+			Timestamp: x.timestamp,
+			Tombstone: x.tombstone,
+		}, true
+	}
+	return memtables.Unos{}, false
 }
