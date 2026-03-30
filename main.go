@@ -1,6 +1,7 @@
 package main
 
 import (
+	bufferpool "NASP_projekat/BufferPool"
 	configuration "NASP_projekat/Configuration"
 	wal "NASP_projekat/WriteAheadLog"
 	probabilistics "NASP_projekat/probabilistics"
@@ -16,6 +17,7 @@ func meni() {
 		fmt.Println("1 - Probabilisticke strukture")
 		fmt.Println("2 - Konfiguracija")
 		fmt.Println("3 - Put") // testiranje
+		fmt.Println("4 - test bufferpool")
 		fmt.Println("0 - Izlaz")
 
 		fmt.Print("Unesite jednu od ponudjenih opcija: ")
@@ -27,9 +29,12 @@ func meni() {
 		case 2:
 			configuration.KonfiguracijaMeni()
 		case 3:
-			wal.Unesi("put", "operation", "doomsday")
+			wal.Unesi("delete", "operation", "doomsday")
 
 			wal.Ispisi()
+		case 4:
+			vrednost := bufferpool.Get("operation")
+			fmt.Println("Vrednost: ", vrednost)
 		case 0:
 			ocistiProzor()
 			fmt.Println("Izasli ste iz aplikacije.")

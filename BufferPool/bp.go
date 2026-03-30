@@ -24,3 +24,19 @@ func test() {
 	}
 
 }
+
+func Get(kljuc string) string {
+	podaci := Ucitaj()
+	vrednost := ""
+
+	for _, podatak := range podaci {
+		if podatak.Kljuc == kljuc && podatak.Dogadjaj == "put" {
+			vrednost = podatak.Vrednost
+		}
+		if podatak.Kljuc == kljuc && podatak.Dogadjaj == "delete" {
+			vrednost = ""
+		}
+	}
+
+	return vrednost
+}
