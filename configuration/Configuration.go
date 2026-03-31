@@ -14,6 +14,7 @@ func KonfiguracijaMeni() {
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
 	fmt.Println("2 - BufferPool")
+	fmt.Println("3 - SkipList")
 	fmt.Println("0 - Nazad")
 
 	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
@@ -24,6 +25,8 @@ func KonfiguracijaMeni() {
 		konfiguracijaStruktura(konfiguracija, "WriteAheadLog")
 	case 2:
 		konfiguracijaStruktura(konfiguracija, "BufferPool")
+	case 3:
+		konfiguracijaStruktura(konfiguracija, "SkipList")
 	case 0:
 		return
 	}
@@ -48,6 +51,8 @@ func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
 			korenskaKonfig = izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig)
 		case "BufferPool":
 			korenskaKonfig = izmeniKonfiguracijuBufferPoola(korenskaKonfig)
+		case "SkipList":
+			korenskaKonfig = izmeniKonfiguracijuSkipListe(korenskaKonfig)
 
 		}
 
@@ -105,6 +110,31 @@ func izmeniKonfiguracijuBufferPoola(korenskaKonfig map[string]map[string]uint64)
 	case 1:
 		korenskaKonfig = izmeniVelicinuSegmenta(korenskaKonfig, "BufferPool")
 	}
+
+	return korenskaKonfig
+}
+
+func izmeniKonfiguracijuSkipListe(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	ocistiProzor()
+	fmt.Print("===== Izmena konfiguracije SkipList-e =====\n\n")
+	fmt.Println("1 - Maksimalan broj elemenata")
+
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
+	opcija := unesiBroj()
+
+	switch opcija {
+	case 1:
+		korenskaKonfig = izmeniMaksimalanBrojElemenata(korenskaKonfig)
+	}
+
+	return korenskaKonfig
+}
+
+func izmeniMaksimalanBrojElemenata(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Print("Unesite novi maksimalni broj elemenata: ")
+	velicinaSegmenta := unesiBroj()
+
+	korenskaKonfig["SkipList"]["Maksimalan broj elemenata"] = uint64(velicinaSegmenta)
 
 	return korenskaKonfig
 }

@@ -2,8 +2,11 @@
   "BufferPool": {
     "Velicina segmenta": 15
   },
+  "SkipList": {
+    "Maksimalan broj elemenata": 11
+  },
   "WriteAheadLog": {
-    "Padding": 50,
+    "Padding": 49,
     "Velicina segmenta": 200
   }
 }
