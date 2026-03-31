@@ -1,6 +1,7 @@
 package memtableinterface
 
 import (
+	wal "NASP_projekat/WriteAheadLog"
 	"NASP_projekat/memtables"
 	"sort"
 )
@@ -138,4 +139,20 @@ func (m *Memtable) Isprazni() {
 		samoZaCitanje: false,
 	}
 	m.tabele = []*Instanca{prva}
+}
+
+func (m *Memtable) ucitajIzWAL() error { //metoda koja popunjava memtable zapisima iz WAL-a
+	zapisi, err := wal.UcitajSveZapise()
+	if err != nil {
+		return err
+	}
+
+	for _, z := range zapisi {
+		if z.Tombstone {
+			m.Obrisi(z.Kljuc)
+		} else {
+			m.Ubaci(z.Kljuc, z.Vrednost)
+		}
+	}
+	return nil
 }
