@@ -5,9 +5,6 @@
   "SkipList": {
     "Maksimalan broj elemenata": 11
   },
-  "HashMemtable": {
-    "Maksimalno unosa": 10
-  },
   "WriteAheadLog": {
     "Padding": 49,
     "Velicina segmenta": 200
