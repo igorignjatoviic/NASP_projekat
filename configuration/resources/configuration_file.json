@@ -1,6 +1,7 @@
 {
   "BufferPool": {
-    "Velicina segmenta": 15
+    "Velicina segmenta": 15,
+    "Velicina bloka": 5
   },
   "SkipList": {
     "Maksimalan broj elemenata": 11
