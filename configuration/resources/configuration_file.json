@@ -8,5 +8,8 @@
   "WriteAheadLog": {
     "Padding": 49,
     "Velicina segmenta": 200
+  },
+  "BlockManager": {
+    "Velicina bloka": 10
   }
 }

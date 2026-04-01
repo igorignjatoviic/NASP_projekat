@@ -9,8 +9,8 @@ import (
 
 type Tuple struct {
 	Dogadjaj        string
-	duzinaKljuca    uint64
-	duzinaVrednosti uint64
+	DuzinaKljuca    uint64
+	DuzinaVrednosti uint64
 	Kljuc           string
 	Vrednost        string
 }
@@ -20,17 +20,18 @@ func NoviTuple(dogadjaj string, kljuc string, vrednost string) *Tuple {
 		Dogadjaj:        dogadjaj,
 		Kljuc:           kljuc,
 		Vrednost:        vrednost,
-		duzinaKljuca:    uint64(len(kljuc)),
-		duzinaVrednosti: uint64(len(vrednost)),
+		DuzinaKljuca:    uint64(len(kljuc)),
+		DuzinaVrednosti: uint64(len(vrednost)),
 	}
 }
 
 type BufferPool struct {
 	velicina uint64
-	podaci   []Tuple
+	Podaci   []Tuple
 }
 
 func (bp *BufferPool) Unesi(niz []Tuple) error {
+	bp.Podaci = append(bp.Podaci, niz...) // MILICA JE DODALA OVU LINIJU
 	fajl, err := os.Create("BufferPool/resources/bufferpool.bin")
 	if err != nil {
 		return err
@@ -46,10 +47,10 @@ func (bp *BufferPool) Unesi(niz []Tuple) error {
 		if err := binary.Write(fajl, binary.BigEndian, uint8(tombstone)); err != nil {
 			fmt.Println(err)
 		}
-		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.duzinaKljuca)); err != nil {
+		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.DuzinaKljuca)); err != nil {
 			fmt.Println(err)
 		}
-		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.duzinaVrednosti)); err != nil {
+		if err := binary.Write(fajl, binary.BigEndian, uint64(podatak.DuzinaVrednosti)); err != nil {
 			fmt.Println(err)
 		}
 
@@ -73,7 +74,7 @@ func NoviBufferPool() *BufferPool {
 
 	return &BufferPool{
 		velicina: uint64(velicina),
-		podaci:   make([]Tuple, velicina),
+		Podaci:   make([]Tuple, 0, velicina),
 	}
 }
 
@@ -89,11 +90,11 @@ func OsveziBufferPool(buffer []Tuple, element Tuple) []Tuple {
 func GenerisiPocetniFajl() {
 	bp := BufferPool{}
 	bp.velicina = 5
-	bp.podaci = make([]Tuple, bp.velicina)
+	bp.Podaci = make([]Tuple, bp.velicina)
 
 	for i := range 5 {
 		t := NoviTuple("put", "igor", "njnjnjnjnj")
-		bp.podaci[i] = *t
+		bp.Podaci[i] = *t
 	}
 
 	fajl, err := os.Create("BufferPool/resources/bufferpool.bin")
@@ -102,7 +103,7 @@ func GenerisiPocetniFajl() {
 	}
 	defer fajl.Close()
 
-	for _, podatak := range bp.podaci {
+	for _, podatak := range bp.Podaci {
 		tombstone := 0
 		if podatak.Dogadjaj == "delete" {
 			tombstone = 1
@@ -111,10 +112,10 @@ func GenerisiPocetniFajl() {
 		if err := binary.Write(fajl, binary.BigEndian, uint8(tombstone)); err != nil {
 			fmt.Println(err)
 		}
-		if err := binary.Write(fajl, binary.BigEndian, podatak.duzinaKljuca); err != nil {
+		if err := binary.Write(fajl, binary.BigEndian, podatak.DuzinaKljuca); err != nil {
 			fmt.Println(err)
 		}
-		if err := binary.Write(fajl, binary.BigEndian, podatak.duzinaVrednosti); err != nil {
+		if err := binary.Write(fajl, binary.BigEndian, podatak.DuzinaVrednosti); err != nil {
 			fmt.Println(err)
 		}
 
@@ -136,10 +137,15 @@ func Ucitaj() []Tuple {
 	fajl, err := os.Open("BufferPool/resources/bufferpool.bin")
 	if err != nil {
 		fmt.Println("Greska prilikom otvaranja fajla u citanju.")
+		return []Tuple{} // MILICA JE DODALA OVO
 	}
 	defer fajl.Close()
 
-	for i := range bp.velicina {
+	// Prvo pročitaj koliko zapisa ima u fajlu
+	podaci := make([]Tuple, 0) // MILICA JE DODALA
+	i := uint64(0)             // MILICA JE DODALA
+	for i < bp.velicina {
+		//fmt.Print(i) // MILICA JE OVO DODALA JER MI JE IZBACIVALO GRESKU DA SE I NE KORISTI
 		var tombstone uint8
 		binary.Read(fajl, binary.BigEndian, &tombstone)
 
@@ -160,8 +166,11 @@ func Ucitaj() []Tuple {
 			dogadjaj = "delete"
 		}
 
-		bp.podaci[i] = *NoviTuple(dogadjaj, string(kljuc), string(vrednost))
+		//bp.Podaci[i] = *NoviTuple(dogadjaj, string(kljuc), string(vrednost))	// MILICA JE ZAKOMENTARISALA
+		podaci = append(podaci, *NoviTuple(dogadjaj, string(kljuc), string(vrednost))) // MILICA JE DODALA
+		i++
 	}
 
-	return bp.podaci
+	//return bp.Podaci
+	return podaci
 }
