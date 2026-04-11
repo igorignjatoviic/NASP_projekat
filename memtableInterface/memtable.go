@@ -1,6 +1,7 @@
 package memtableinterface
 
 import (
+	configuration "NASP_projekat/Configuration"
 	wal "NASP_projekat/WriteAheadLog"
 	"NASP_projekat/memtables"
 	"sort"
@@ -155,4 +156,44 @@ func (m *Memtable) ucitajIzWAL() error { //metoda koja popunjava memtable zapisi
 		}
 	}
 	return nil
+}
+
+func NovaMemtableIzKonfiguracije() *Memtable { //funkcija koja pravi memtable strukturu na osnovu konfiguracionog fajla
+	konf := configuration.UcitajKonfiguraciju()
+	memConf, postoji := konf["Memtable"]
+	if !postoji {
+		return NovaMemtable("hashmap", 2, 100, 16, 4)
+	}
+
+	strukturaKod := memConf["Struktura"]
+	brojTabela := int(memConf["Broj tabela"])
+	maxElemenata := int(memConf["Maksimalan broj elemenata"])
+	maxVisina := int(memConf["Max visina skipliste"])
+	redBStabla := int(memConf["Red B stabla"])
+
+	if brojTabela <= 0 {
+		brojTabela = 2
+	}
+	if maxElemenata <= 0 {
+		maxElemenata = 100
+	}
+	if maxVisina <= 0 {
+		maxVisina = 16
+	}
+	if redBStabla <= 0 {
+		redBStabla = 4
+	}
+
+	tip := "hashmap"
+
+	switch strukturaKod {
+	case 1:
+		tip = "hashmap"
+	case 2:
+		tip = "skiplist"
+	case 3:
+		tip = "btree"
+	}
+
+	return NovaMemtable(tip, brojTabela, maxElemenata, maxVisina, redBStabla)
 }
