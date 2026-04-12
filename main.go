@@ -37,7 +37,7 @@ func meni() {
 			vrednost := bufferpool.Get("operation")
 			fmt.Println("Vrednost: ", vrednost)
 		case 5:
-			testBlockManager()
+			blockmanager.TestBlockManager()
 		case 0:
 			ocistiProzor()
 			fmt.Println("Izasli ste iz aplikacije.")
@@ -54,85 +54,4 @@ func ocistiProzor() {
 
 func main() {
 	meni()
-}
-
-func testBlockManager() {
-	ocistiProzor()
-	bp := bufferpool.NoviBufferPool()
-	testPodaci := []bufferpool.Tuple{
-		*bufferpool.NoviTuple("put", "pera", "Peric"),
-		*bufferpool.NoviTuple("put", "mika", "Mikic"),
-		*bufferpool.NoviTuple("put", "zika", "Zikic"),
-		*bufferpool.NoviTuple("delete", "mika", ""),
-		*bufferpool.NoviTuple("put", "laza", "Lazic"),
-	}
-	err := bp.Unesi(testPodaci)
-	if err != nil {
-		fmt.Printf("Greska pri upisu: %v\n", err)
-		return
-	}
-	os.MkdirAll("test_blocks", 0755) // direktorijum za blokove, njega mogu da obrisem kada zavrsim sa testom
-	bm := blockmanager.NoviBlockManager(bp, "test_blocks")
-	if bm == nil {
-		fmt.Println("Greska pri kreiranju BlockManager-a")
-		return
-	}
-
-	// upis blokova na disk
-	err = bm.UpisiSveBlokove()
-	if err != nil {
-		fmt.Printf("Greska pri upisu blokova na disk: %v\n", err)
-		return
-	}
-	fmt.Printf("Uspesno upisano %d blokova na disk\n", len(bm.Blokovi))
-
-	// citanje blokova sa diska
-	for i := 0; i < len(bm.Blokovi); i++ {
-		ucitaniBlok, err := bm.UcitajBlok(i)
-		if err != nil {
-			fmt.Printf("Greska pri citanju bloka %d: %v\n", i, err)
-			continue
-		}
-		fmt.Printf("Blok %d: %d tuple-ova\n", i, len(ucitaniBlok.Podaci))
-		// prikaz sadrzaja bloka
-		for j, tuple := range ucitaniBlok.Podaci {
-			fmt.Printf("      [%d] %s = %s (%s)\n", j, tuple.Kljuc, tuple.Vrednost, tuple.Dogadjaj)
-		}
-	}
-
-	// pretraga kljuceva
-	trazeniKljuc := "zika"
-	indeksBloka, indeksTuple := bm.PronadjiBlok(trazeniKljuc)
-	if indeksBloka != -1 {
-		fmt.Printf("Kljuc '%s' pronadjen u bloku %d na poziciji %d\n", trazeniKljuc, indeksBloka, indeksTuple)
-	} else {
-		fmt.Printf("Kljuc '%s' nije pronadjen\n", trazeniKljuc)
-	}
-	trazeniKljuc = "nepostojeci"
-	indeksBloka, indeksTuple = bm.PronadjiBlok(trazeniKljuc)
-	if indeksBloka != -1 {
-		fmt.Printf("Kljuc '%s' pronadjen u bloku %d na poziciji %d\n", trazeniKljuc, indeksBloka, indeksTuple)
-	} else {
-		fmt.Printf("Kljuc '%s' nije pronadjen\n", trazeniKljuc)
-	}
-
-	// dodavanje novih podataka
-	noviPodaci := []bufferpool.Tuple{
-		*bufferpool.NoviTuple("put", "novi1", "Vrednost1"),
-		*bufferpool.NoviTuple("put", "novi2", "Vrednost2"),
-	}
-	err = bp.Unesi(noviPodaci)
-	if err != nil {
-		fmt.Printf("Greska pri upisu novih podataka: %v\n", err)
-	} else {
-		fmt.Printf("BufferPool sada ima %d tuple-ova\n", len(bp.Podaci))
-		bm.OsveziBlokove()
-		err = bm.UpisiSveBlokove()
-		if err != nil {
-			fmt.Printf("Greska pri upisu osvezenih blokova: %v\n", err)
-		} else {
-			fmt.Println("Osvezeni blokovi upisani na disk")
-		}
-	}
-
 }
