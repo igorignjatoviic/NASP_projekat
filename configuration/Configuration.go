@@ -1,4 +1,3 @@
-package Configuration
 package configuration
 
 import (
@@ -77,7 +76,6 @@ func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
 
 func trenutnaKonfiguracijaStrukture(korenskaKonfig map[string]map[string]uint64, struktura string) {
 	ocistiProzor()
-	fmt.Print("===== Trenutna konfiguracija WriteAheadLog-a =====\n\n")
 	fmt.Printf("===== Trenutna konfiguracija %s-a =====\n\n", struktura)
 
 	konfiguracija := korenskaKonfig[struktura]
