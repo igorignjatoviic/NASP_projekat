@@ -11,5 +11,9 @@
   },
   "BlockManager": {
     "Velicina bloka": 10
+  },
+  "SSTable": {
+    "SummaryStep": 3,
+    "BlockSize": 4096
   }
 }

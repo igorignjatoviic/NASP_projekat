@@ -1,4 +1,5 @@
 package Configuration
+package configuration
 
 import (
 	"bufio"
@@ -15,6 +16,7 @@ func KonfiguracijaMeni() {
 	fmt.Println("1 - WriteAheadLog")
 	fmt.Println("2 - BufferPool")
 	fmt.Println("3 - SkipList")
+	fmt.Println("4 - SSTable")
 	fmt.Println("0 - Nazad")
 
 	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
@@ -27,6 +29,8 @@ func KonfiguracijaMeni() {
 		konfiguracijaStruktura(konfiguracija, "BufferPool")
 	case 3:
 		konfiguracijaStruktura(konfiguracija, "SkipList")
+	case 4:
+		konfiguracijaStruktura(konfiguracija, "SSTable")
 	case 0:
 		return
 	}
@@ -53,6 +57,8 @@ func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
 			korenskaKonfig = izmeniKonfiguracijuBufferPoola(korenskaKonfig)
 		case "SkipList":
 			korenskaKonfig = izmeniKonfiguracijuSkipListe(korenskaKonfig)
+		case "SSTable":
+			korenskaKonfig = izmeniKonfiguracijuSSTable(korenskaKonfig)
 
 		}
 
@@ -72,6 +78,7 @@ func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
 func trenutnaKonfiguracijaStrukture(korenskaKonfig map[string]map[string]uint64, struktura string) {
 	ocistiProzor()
 	fmt.Print("===== Trenutna konfiguracija WriteAheadLog-a =====\n\n")
+	fmt.Printf("===== Trenutna konfiguracija %s-a =====\n\n", struktura)
 
 	konfiguracija := korenskaKonfig[struktura]
 	for kljuc, vrednost := range konfiguracija {
@@ -125,6 +132,29 @@ func izmeniKonfiguracijuSkipListe(korenskaKonfig map[string]map[string]uint64) m
 	switch opcija {
 	case 1:
 		korenskaKonfig = izmeniMaksimalanBrojElemenata(korenskaKonfig)
+	}
+
+	return korenskaKonfig
+}
+
+func izmeniKonfiguracijuSSTable(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	ocistiProzor()
+	fmt.Print("===== Izmena konfiguracije SSTable =====\n\n")
+	fmt.Println("1 - SummaryStep")
+	fmt.Println("2 - Velicina bloka u bajtovima)")
+
+	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
+	opcija := unesiBroj()
+
+	switch opcija {
+	case 1:
+		fmt.Print("Unesite novi summaryStep: ")
+		summaryStep := unesiBroj()
+		korenskaKonfig["SSTable"]["SummaryStep"] = uint64(summaryStep)
+	case 2:
+		fmt.Print("Unesite novu velicinu bloka u bajtovima: ")
+		blockSize := unesiBroj()
+		korenskaKonfig["SSTable"]["BlockSize"] = uint64(blockSize)
 	}
 
 	return korenskaKonfig
