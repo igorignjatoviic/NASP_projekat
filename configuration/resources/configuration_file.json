@@ -3,9 +3,6 @@
     "Velicina segmenta": 15,
     "Velicina bloka": 5
   },
-  "SkipList": {
-    "Maksimalan broj elemenata": 11
-  },
   "WriteAheadLog": {
     "Padding": 49,
     "Velicina segmenta": 200
@@ -16,5 +13,12 @@
   "SSTable": {
     "SummaryStep": 3,
     "BlockSize": 4096
+  },
+  "Memtable": {
+    "Struktura": 1,
+    "Broj tabela": 3,
+    "Maksimalan broj elemenata": 100,
+    "Max visina skipliste": 16,
+    "Red B stabla": 4
   }
 }

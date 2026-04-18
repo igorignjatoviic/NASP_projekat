@@ -14,7 +14,7 @@ func KonfiguracijaMeni() {
 	fmt.Print("===== Konfiguracija =====\n\n")
 	fmt.Println("1 - WriteAheadLog")
 	fmt.Println("2 - BufferPool")
-	fmt.Println("3 - SkipList")
+	fmt.Println("3 - Memtable")
 	fmt.Println("4 - SSTable")
 	fmt.Println("0 - Nazad")
 
@@ -27,7 +27,7 @@ func KonfiguracijaMeni() {
 	case 2:
 		konfiguracijaStruktura(konfiguracija, "BufferPool")
 	case 3:
-		konfiguracijaStruktura(konfiguracija, "SkipList")
+		konfiguracijaStruktura(konfiguracija, "Memtable")
 	case 4:
 		konfiguracijaStruktura(konfiguracija, "SSTable")
 	case 0:
@@ -54,8 +54,8 @@ func konfiguracijaStruktura(korenskaKonfig map[string]map[string]uint64,
 			korenskaKonfig = izmeniKonfiguracijuWriteAheadLoga(korenskaKonfig)
 		case "BufferPool":
 			korenskaKonfig = izmeniKonfiguracijuBufferPoola(korenskaKonfig)
-		case "SkipList":
-			korenskaKonfig = izmeniKonfiguracijuSkipListe(korenskaKonfig)
+		case "Memtable":
+			korenskaKonfig = izmeniKonfiguracijuMemtablea(korenskaKonfig)
 		case "SSTable":
 			korenskaKonfig = izmeniKonfiguracijuSSTable(korenskaKonfig)
 
@@ -119,19 +119,95 @@ func izmeniKonfiguracijuBufferPoola(korenskaKonfig map[string]map[string]uint64)
 	return korenskaKonfig
 }
 
-func izmeniKonfiguracijuSkipListe(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+func izmeniKonfiguracijuMemtablea(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
 	ocistiProzor()
-	fmt.Print("===== Izmena konfiguracije SkipList-e =====\n\n")
-	fmt.Println("1 - Maksimalan broj elemenata")
+	fmt.Println("===== Izmena konfiguracije Memtable-a ====\n\n")
+	fmt.Println("1 - Struktura")
+	fmt.Println("2 - Broj tabela")
+	fmt.Println("3 - Max elemenata")
+	fmt.Println("4 - Max visina skipliste")
+	fmt.Println("5 - Red B stabla")
 
 	fmt.Print("\nUnesite jednu od ponudjenih opcija: ")
 	opcija := unesiBroj()
 
 	switch opcija {
 	case 1:
-		korenskaKonfig = izmeniMaksimalanBrojElemenata(korenskaKonfig)
+		korenskaKonfig = izmeniStrukturuMemtablea(korenskaKonfig)
+	case 2:
+		korenskaKonfig = izmeniBrojTabela(korenskaKonfig)
+	case 3:
+		korenskaKonfig = izmeniMaxElemenata(korenskaKonfig)
+	case 4:
+		korenskaKonfig = izmeniMaxVisinuSkipliste(korenskaKonfig)
+	case 5:
+		korenskaKonfig = izmeniRedBStabla(korenskaKonfig)
 	}
+	return korenskaKonfig
+}
 
+func izmeniStrukturuMemtablea(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Println("Izaberite strukturu za memtable:")
+	fmt.Println("1 - HashMap")
+	fmt.Println("2 - Skiplista")
+	fmt.Println("3 - B stablo")
+
+	fmt.Print("Izaberite jednu od opcija: ")
+	struktura := unesiBroj()
+
+	if struktura >= 1 && struktura <= 3 {
+		korenskaKonfig["Memtable"]["Struktura"] = uint64(struktura)
+	} else {
+		fmt.Println("Pogresan unos, konfiuracija nije izmenjena.")
+	}
+	return korenskaKonfig
+}
+
+func izmeniBrojTabela(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Print("Unesite novi broj tabela: ")
+	brojTabela := unesiBroj()
+
+	if brojTabela > 0 {
+		korenskaKonfig["Memtable"]["Broj tabela"] = uint64(brojTabela)
+	} else {
+		fmt.Println("Broj tabela mora da bude veci od nule.")
+	}
+	return korenskaKonfig
+}
+
+func izmeniMaxElemenata(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Print("Unesite novi maksimalan broj elemenata po tabeli: ")
+	maxElemenata := unesiBroj()
+
+	if maxElemenata > 0 {
+		korenskaKonfig["Memtable"]["Maksimalan broj elemenata"] = uint64(maxElemenata)
+	} else {
+		fmt.Println("Maksimalan broj elemenata mora da bude broj veci od nule.")
+	}
+	return korenskaKonfig
+}
+
+func izmeniMaxVisinuSkipliste(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Print("Unesite novu maksimalnu visinu skipliste: ")
+	maxVisina := unesiBroj()
+
+	if maxVisina > 0 {
+		korenskaKonfig["Memtable"]["Max visina skipliste"] = uint64(maxVisina)
+	} else {
+		fmt.Println("Maksimalna visina skipliste mora da bude broj veci od nule.")
+	}
+	return korenskaKonfig
+}
+
+func izmeniRedBStabla(korenskaKonfig map[string]map[string]uint64) map[string]map[string]uint64 {
+	fmt.Print("Unesite nov red B stabla: ")
+	red := unesiBroj()
+
+	if red > 0 {
+		korenskaKonfig["Memtable"]["Red B stabla"] = uint64(red)
+	} else {
+		fmt.Println("Red B stabla mora da bude broj veci od nule.")
+	}
 	return korenskaKonfig
 }
 
